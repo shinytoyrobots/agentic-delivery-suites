@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The chavruta model — preserved dissent in flow</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --bg-elev: #ffffff;
+    --bg-code: #f4f1ea;
+    --bg-callout: #fef6e4;
+    --border: #e5e0d4;
+    --border-soft: #ede9de;
+    --text: #1f2125;
+    --text-muted: #6a6760;
+    --text-faint: #93908a;
+    --accent: #b45309;
+    --accent-soft: #fde8c8;
+    --link: #92400e;
+    --link-hover: #7c2d12;
+    --code-text: #2a2724;
+    --table-stripe: #f7f4ed;
+    --max-width: 1180px;
+    --content-max: 720px;
+    --sidebar-width: 280px;
+    --serif: ui-serif, Charter, "Iowan Old Style", "Apple Garamond", Georgia, Cambria, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18171a;
+      --bg-elev: #1f1e22;
+      --bg-code: #25242a;
+      --bg-callout: #2a241a;
+      --border: #34323a;
+      --border-soft: #2a2930;
+      --text: #e8e4dc;
+      --text-muted: #a09c93;
+      --text-faint: #6f6c66;
+      --accent: #f59e0b;
+      --accent-soft: #4a371b;
+      --link: #fbbf24;
+      --link-hover: #fcd34d;
+      --code-text: #d8d4cc;
+      --table-stripe: #1c1b1f;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 24px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .layout {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+
+  /* Sidebar / TOC */
+  aside {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px;
+    font-size: 14px;
+  }
+
+  aside .toc-title {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-faint);
+    margin: 0 0 12px;
+    padding: 0 12px;
+  }
+
+  aside nav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  aside nav li {
+    margin: 0;
+    padding: 0;
+  }
+
+  aside nav a {
+    display: block;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    line-height: 1.4;
+  }
+
+  aside nav a:hover {
+    color: var(--text);
+    background: var(--border-soft);
+  }
+
+  aside nav a.active {
+    color: var(--link);
+    border-left-color: var(--accent);
+    font-weight: 500;
+  }
+
+  aside nav ol ol a {
+    padding-left: 28px;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  /* Main content */
+  main {
+    max-width: var(--content-max);
+    min-width: 0;
+  }
+
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    color: var(--text);
+  }
+
+  .doc-header .lede {
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 56px 0 16px;
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+
+  h3 {
+    font-size: 19px;
+    line-height: 1.35;
+    font-weight: 600;
+    margin: 36px 0 12px;
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+
+  .anchor {
+    color: var(--text-faint);
+    text-decoration: none;
+    opacity: 0;
+    margin-left: 8px;
+    font-weight: 400;
+    transition: opacity 0.15s, color 0.15s;
+  }
+
+  h2:hover .anchor, h3:hover .anchor {
+    opacity: 1;
+  }
+
+  .anchor:hover {
+    color: var(--accent);
+  }
+
+  p, ul, ol {
+    margin: 0 0 18px;
+  }
+
+  ul, ol {
+    padding-left: 24px;
+  }
+
+  li {
+    margin-bottom: 6px;
+  }
+
+  a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: rgba(146, 64, 14, 0.3);
+    text-underline-offset: 3px;
+    transition: color 0.15s, text-decoration-color 0.15s;
+  }
+
+  a:hover {
+    color: var(--link-hover);
+    text-decoration-color: currentColor;
+  }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-code);
+    color: var(--code-text);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+  }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 20px 0 24px;
+    line-height: 1.55;
+    font-size: 13.5px;
+  }
+
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: var(--code-text);
+  }
+
+  blockquote {
+    margin: 24px 0;
+    padding: 16px 20px;
+    background: var(--bg-callout);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  blockquote p {
+    margin: 0;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0 28px;
+    font-size: 14.5px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  th {
+    text-align: left;
+    background: var(--border-soft);
+    padding: 10px 14px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+    color: var(--text);
+  }
+
+  tr:nth-child(even) td {
+    background: var(--table-stripe);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  td code, th code {
+    font-size: 0.9em;
+  }
+
+  /* Mermaid diagram surface */
+  .diagram {
+    margin: 24px 0 12px;
+    padding: 20px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .diagram pre.mermaid {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    line-height: normal;
+  }
+
+  .caption {
+    font-size: 13px;
+    color: var(--text-faint);
+    margin: 0 0 24px;
+    text-align: center;
+  }
+
+  .traits {
+    font-size: 14.5px;
+    background: var(--bg-callout);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 12px 18px;
+    margin: 0 0 28px;
+  }
+
+  /* Top-level page tabs */
+  .page-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 0 36px;
+    background: var(--bg-code);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+  }
+
+  .page-tabs a {
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 7px 15px;
+    border-radius: 7px;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+
+  .page-tabs a:hover {
+    color: var(--text);
+    background: var(--border-soft);
+  }
+
+  .page-tabs a[aria-current="page"] {
+    background: var(--bg-elev);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Footer */
+  .doc-footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-faint);
+    font-size: 13px;
+  }
+
+  .doc-footer a { color: var(--text-muted); }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+      gap: 32px;
+      padding: 24px 20px 64px;
+    }
+
+    aside {
+      position: static;
+      max-height: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 8px;
+    }
+
+    aside details {
+      cursor: pointer;
+    }
+
+    aside details summary {
+      list-style: none;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    aside details summary::-webkit-details-marker { display: none; }
+
+    aside details summary::after {
+      content: "▾";
+      float: right;
+      color: var(--text-faint);
+    }
+
+    aside details[open] summary::after {
+      content: "▴";
+    }
+
+    aside .toc-title { display: none; }
+
+    .page-tabs { display: flex; flex-wrap: wrap; }
+
+    h1 { font-size: 34px; }
+    h2 { font-size: 25px; margin: 40px 0 12px; }
+    h3 { font-size: 17px; }
+    .doc-header .lede { font-size: 17px; }
+  }
+
+  /* Print */
+  @media print {
+    aside, .page-tabs { display: none; }
+    .layout {
+      display: block;
+      max-width: none;
+      padding: 0;
+    }
+    main { max-width: none; }
+    a { color: var(--text); text-decoration: none; }
+    pre, code { background: #f5f5f5; }
+    h2 { page-break-after: avoid; }
+    pre:not(.mermaid), table { page-break-inside: avoid; }
+    .diagram, pre.mermaid { page-break-inside: auto; page-break-before: auto; }
+    .diagram svg { max-height: 6.3in !important; height: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <details open>
+    <summary>On this page</summary>
+    <p class="toc-title">On this page</p>
+    <nav>
+      <ol>
+        <li><a href="#origin">Where the name comes from</a></li>
+        <li><a href="#problem">The problem it solves</a></li>
+        <li><a href="#how">How it works in flow</a></li>
+        <li><a href="#dissent">The dissent record</a></li>
+        <li><a href="#properties">Key properties</a></li>
+        <li><a href="#why">Why it's there</a></li>
+      </ol>
+    </nav>
+  </details>
+</aside>
+
+<main>
+
+<nav class="page-tabs" aria-label="Pages">
+  <a href="delivery-team-vs-flow.html">delivery-team vs flow</a>
+  <a href="index.html">Using flow</a>
+  <a href="chavruta.html" aria-current="page">Chavruta model</a>
+</nav>
+
+<header class="doc-header">
+  <span class="eyebrow">flow · preserved dissent (P6)</span>
+  <h1>The chavruta model</h1>
+  <p class="lede">Two reviewers argue opposite sides, and the disagreement is preserved as a first-class artifact that resurfaces itself when the world changes — instead of being resolved and forgotten.</p>
+</header>
+
+<h2 id="origin">Where the name comes from <a class="anchor" href="#origin" aria-label="Permalink">#</a></h2>
+
+<p><em>Chavruta</em> is the traditional Jewish method of studying texts in pairs — two people who deliberately argue opposite sides to sharpen understanding. The point isn't to win; it's that the friction surfaces things neither person would see alone. The Talmud goes a step further: it <strong>writes down the losing arguments</strong> alongside the winning ruling, because an argument that loses today might be the correct one under different circumstances tomorrow.</p>
+
+<p><code>flow</code> borrows both ideas — the adversarial pairing, and the preservation of the minority position.</p>
+
+<h2 id="problem">The problem it solves <a class="anchor" href="#problem" aria-label="Permalink">#</a></h2>
+
+<p>Normal code review drives toward <strong>agreement</strong>. Two reviewers debate, one concedes, the discussion gets resolved and forgotten. The chavruta model's claim is that <em>this throws away information</em>. When two competent reviewers genuinely disagree, the disagreement itself is a signal about a hard tradeoff in the problem — not noise to be cleaned up.</p>
+
+<p>Human teams can't really hold onto that. The reasoning lives in a Slack thread or a sprint retro, and six months later nobody remembers it. An agent system, though, can record it precisely and watch for the moment it becomes relevant again.</p>
+
+<h2 id="how">How it works in flow <a class="anchor" href="#how" aria-label="Permalink">#</a></h2>
+
+<h3>1. A pair reviews, with opposite biases baked in</h3>
+<p>At a key checkpoint — when variants are converging, when a big spec change lands, or when something's about to ship — two reviewer agents (<code>flow-chavruta-pair</code>) look at the work. One is wired to argue for <strong>stability</strong> ("don't break things, this is risky"). The other argues for <strong>velocity</strong> ("ship it, the caution is overblown"). They aren't neutral; the opposing stance is the whole design.</p>
+
+<h3>2. They exit on disagreement, not consensus</h3>
+<p>This is the unusual part. The review doesn't end when they agree — it ends when they've clearly documented <em>where they disagree and why</em>. Both positions get written down as if each were correct, plus a note on which one provisionally won this round.</p>
+
+<h3>3. The disagreement becomes a stored object — a "dissent"</h3>
+<p>Each dissent is a small record: the minority position, the majority position, who won for now, and — critically — <strong>reactivation conditions</strong>: the specific future circumstances under which the losing side would become right.</p>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart LR
+    R["flow-chavruta-pair<br/>stability vs velocity"] --> RA["raised"]
+    RA --> AC["active<br/>provisional resolution +<br/>reactivation conditions"]
+    AC -->|"monitor matches<br/>a trigger"| RE["reactivated"]
+    RE --> ACK["acknowledged<br/>tradeoff still valid"]
+    RE --> MIT["mitigated<br/>code changed"]
+    RE --> RES["resolved<br/>moot or was wrong"]
+
+    classDef start fill:#f3e8fd,stroke:#a142f4,color:#1a1a1a;
+    classDef live fill:#e6f4ea,stroke:#34a853,color:#1a1a1a;
+    classDef alert fill:#fce8e6,stroke:#ea4335,color:#1a1a1a;
+    classDef done fill:#fff4e5,stroke:#f59e0b,color:#1a1a1a;
+    class R start;
+    class RA,AC live;
+    class RE alert;
+    class ACK,MIT,RES done;
+</pre>
+</div>
+<p class="caption">The dissent lifecycle. Status is monotonic — it only moves forward; a resolved dissent that matters again becomes a <em>new</em> dissent citing the old one.</p>
+
+<h3>4. The conditions are machine-checkable</h3>
+<p>Instead of "we'll remember this," a dissent states its triggers concretely:</p>
+<ul>
+  <li><strong>spec change</strong> — "if the spec ever mentions rate limiting, revisit this"</li>
+  <li><strong>code change</strong> — "if more than 3 places end up calling <code>withRetry</code> inline, the middleware approach we rejected was actually right"</li>
+  <li><strong>metric</strong> — "if this variant's performance score drops below 0.75, the simplicity tradeoff cost more than we thought"</li>
+  <li><strong>time</strong> — "re-check at every major version, or every 90 days anyway"</li>
+</ul>
+
+<h3>5. A monitor watches, and the dissent surfaces itself</h3>
+<p>A separate watcher (<code>flow-dissent-monitor</code>) checks those conditions automatically — on every spec bump, every commit, every eval run. When one matches, the dissent flips to <strong>reactivated</strong> and resurfaces for a decision. A human or the orchestrator then either <em>acknowledges</em> it (tradeoff still fine), <em>mitigates</em> it (changes the code), or <em>resolves</em> it (it's genuinely moot now).</p>
+
+<h2 id="dissent">The dissent record <a class="anchor" href="#dissent" aria-label="Permalink">#</a></h2>
+
+<p>Dissents live in an append-only registry (<code>dissents-active.yaml</code>) scoped to the effort. Each carries both positions, the provisional resolution, its reactivation conditions, and a running history. The lifecycle states:</p>
+
+<table>
+  <thead>
+    <tr><th>Status</th><th>Meaning</th><th>Set by</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>active</code></td><td>Recorded; provisional resolution applied; waiting for triggers</td><td><code>flow-chavruta</code></td></tr>
+    <tr><td><code>reactivated</code></td><td>A condition matched; needs attention</td><td><code>flow-dissent-monitor</code></td></tr>
+    <tr><td><code>acknowledged</code></td><td>Reviewed; the tradeoff still holds; no code change</td><td><code>flow-dissent</code></td></tr>
+    <tr><td><code>mitigated</code></td><td>Code changed to address it; triggers shouldn't match anymore</td><td><code>flow-dissent</code></td></tr>
+    <tr><td><code>resolved</code></td><td>Formally retired — a spec change made it moot, or it was wrong</td><td><code>flow-dissent</code></td></tr>
+  </tbody>
+</table>
+
+<p>Only <code>flow-chavruta-pair</code> (and, for methodology concerns, <code>flow-evaluator</code>) may raise dissents. Generators never do — they implement, they don't second-guess; an ambiguous spec gets a HITL flag, not a dissent. Dissents are about <em>decisions</em>, not specifications.</p>
+
+<h2 id="properties">Key properties <a class="anchor" href="#properties" aria-label="Permalink">#</a></h2>
+
+<ul>
+  <li><strong>Append-only.</strong> You never edit a past position. If the disagreement evolves, you resolve the old dissent and raise a new one that cites it. The history is part of the value.</li>
+  <li><strong>Self-surfacing.</strong> Nobody has to remember to go back and re-read anything — the relevant past argument comes <em>find you</em> when conditions change.</li>
+  <li><strong>Disagreement is preserved, not resolved.</strong> A reactivated dissent isn't a veto. It's a flag that says "the assumption behind this old decision may no longer hold — take a fresh look."</li>
+</ul>
+
+<p class="traits"><strong>Guardrails:</strong> the pair has a quota (default 2 dissents per checkpoint, the most material ones) to prevent dissent inflation, and an <code>acknowledged-noisy</code> status suppresses dissents whose triggers fire too often (&gt;5 times) without resolution.</p>
+
+<h2 id="why">Why it's there <a class="anchor" href="#why" aria-label="Permalink">#</a></h2>
+
+<p>It's <code>flow</code>'s mechanism for <strong>institutional memory</strong>. The contrast with <a href="delivery-team-vs-flow.html"><code>delivery-team</code></a> is sharp:</p>
+
+<table>
+  <thead>
+    <tr><th><code>delivery-team</code> (Conservative + Aggressive PM)</th><th><code>flow</code> (chavruta-pair + dissent)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Both PMs produce assessments</td><td>Both reviewers produce positions</td></tr>
+    <tr><td>Scrum Master synthesizes one recommendation</td><td>Provisional resolution recorded with reactivation conditions</td></tr>
+    <tr><td>Divergence archived in sprint memory (narrative)</td><td>Dissent is an append-only, queryable registry (structured)</td></tr>
+    <tr><td>Reactivation needs a human to re-read the retro</td><td>Reactivation is automatic</td></tr>
+    <tr><td>Memory mostly dies at sprint close</td><td>Memory persists across generations</td></tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p>The chavruta pattern is the feature <strong>most likely to compound an advantage over time</strong> — but its value is invisible until the first reactivation actually fires. That delayed payoff is exactly why it has to be automated: a human team would never sustain the bookkeeping long enough to collect.</p>
+</blockquote>
+
+<footer class="doc-footer">
+  <p>flow · the chavruta model · companion to <a href="index.html">Using flow</a></p>
+</footer>
+
+</main>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: dark ? 'dark' : 'neutral',
+    securityLevel: 'loose',
+    flowchart: { useMaxWidth: true, htmlLabels: true }
+  });
+</script>
+
+<script>
+  // Highlight active section in TOC as the reader scrolls.
+  (function() {
+    const tocLinks = Array.from(document.querySelectorAll('aside nav a'));
+    const idToLink = new Map(
+      tocLinks
+        .map(a => [a.getAttribute('href').replace('#', ''), a])
+        .filter(([id]) => id)
+    );
+    const headings = Array.from(idToLink.keys())
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    if (!('IntersectionObserver' in window) || headings.length === 0) return;
+
+    let visible = new Set();
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          visible.add(entry.target.id);
+        } else {
+          visible.delete(entry.target.id);
+        }
+      });
+
+      tocLinks.forEach(a => a.classList.remove('active'));
+
+      let active = null;
+      for (const h of headings) {
+        if (visible.has(h.id)) { active = h.id; break; }
+      }
+      if (!active) {
+        const scroll = window.scrollY + 120;
+        for (const h of headings) {
+          if (h.offsetTop <= scroll) active = h.id;
+        }
+      }
+      if (active && idToLink.has(active)) {
+        idToLink.get(active).classList.add('active');
+      }
+    }, { rootMargin: '-10% 0px -60% 0px', threshold: 0 });
+
+    headings.forEach(h => observer.observe(h));
+  })();
+</script>
+
+</body>
+</html>

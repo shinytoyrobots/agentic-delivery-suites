@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>delivery-team vs flow — two approaches to writing code with AI</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --bg-elev: #ffffff;
+    --bg-code: #f4f1ea;
+    --bg-callout: #fef6e4;
+    --border: #e5e0d4;
+    --border-soft: #ede9de;
+    --text: #1f2125;
+    --text-muted: #6a6760;
+    --text-faint: #93908a;
+    --accent: #b45309;
+    --accent-soft: #fde8c8;
+    --link: #92400e;
+    --link-hover: #7c2d12;
+    --code-text: #2a2724;
+    --table-stripe: #f7f4ed;
+    --max-width: 1180px;
+    --content-max: 720px;
+    --sidebar-width: 280px;
+    --serif: ui-serif, Charter, "Iowan Old Style", "Apple Garamond", Georgia, Cambria, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18171a;
+      --bg-elev: #1f1e22;
+      --bg-code: #25242a;
+      --bg-callout: #2a241a;
+      --border: #34323a;
+      --border-soft: #2a2930;
+      --text: #e8e4dc;
+      --text-muted: #a09c93;
+      --text-faint: #6f6c66;
+      --accent: #f59e0b;
+      --accent-soft: #4a371b;
+      --link: #fbbf24;
+      --link-hover: #fcd34d;
+      --code-text: #d8d4cc;
+      --table-stripe: #1c1b1f;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 24px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .layout {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+
+  /* Sidebar / TOC */
+  aside {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px;
+    font-size: 14px;
+  }
+
+  aside .toc-title {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-faint);
+    margin: 0 0 12px;
+    padding: 0 12px;
+  }
+
+  aside nav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  aside nav li {
+    margin: 0;
+    padding: 0;
+  }
+
+  aside nav a {
+    display: block;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    line-height: 1.4;
+  }
+
+  aside nav a:hover {
+    color: var(--text);
+    background: var(--border-soft);
+  }
+
+  aside nav a.active {
+    color: var(--link);
+    border-left-color: var(--accent);
+    font-weight: 500;
+  }
+
+  aside nav ol ol a {
+    padding-left: 28px;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  /* Main content */
+  main {
+    max-width: var(--content-max);
+    min-width: 0;
+  }
+
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    color: var(--text);
+  }
+
+  .doc-header .lede {
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 56px 0 16px;
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+
+  h3 {
+    font-size: 19px;
+    line-height: 1.35;
+    font-weight: 600;
+    margin: 36px 0 12px;
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+
+  .anchor {
+    color: var(--text-faint);
+    text-decoration: none;
+    opacity: 0;
+    margin-left: 8px;
+    font-weight: 400;
+    transition: opacity 0.15s, color 0.15s;
+  }
+
+  h2:hover .anchor, h3:hover .anchor {
+    opacity: 1;
+  }
+
+  .anchor:hover {
+    color: var(--accent);
+  }
+
+  p, ul, ol {
+    margin: 0 0 18px;
+  }
+
+  ul, ol {
+    padding-left: 24px;
+  }
+
+  li {
+    margin-bottom: 6px;
+  }
+
+  a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: rgba(146, 64, 14, 0.3);
+    text-underline-offset: 3px;
+    transition: color 0.15s, text-decoration-color 0.15s;
+  }
+
+  a:hover {
+    color: var(--link-hover);
+    text-decoration-color: currentColor;
+  }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-code);
+    color: var(--code-text);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+  }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 20px 0 24px;
+    line-height: 1.55;
+    font-size: 13.5px;
+  }
+
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: var(--code-text);
+  }
+
+  blockquote {
+    margin: 24px 0;
+    padding: 16px 20px;
+    background: var(--bg-callout);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  blockquote p {
+    margin: 0;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0 28px;
+    font-size: 14.5px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  th {
+    text-align: left;
+    background: var(--border-soft);
+    padding: 10px 14px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+    color: var(--text);
+  }
+
+  tr:nth-child(even) td {
+    background: var(--table-stripe);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  td code, th code {
+    font-size: 0.9em;
+  }
+
+  /* Mermaid diagram surface */
+  .diagram {
+    margin: 24px 0 12px;
+    padding: 20px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .diagram pre.mermaid {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    line-height: normal;
+  }
+
+  .caption {
+    font-size: 13px;
+    color: var(--text-faint);
+    margin: 0 0 24px;
+    text-align: center;
+  }
+
+  .traits {
+    font-size: 14.5px;
+    background: var(--bg-callout);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 12px 18px;
+    margin: 0 0 28px;
+  }
+
+  /* Top-level page tabs */
+  .page-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 0 36px;
+    background: var(--bg-code);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+  }
+
+  .page-tabs a {
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 7px 15px;
+    border-radius: 7px;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+
+  .page-tabs a:hover {
+    color: var(--text);
+    background: var(--border-soft);
+  }
+
+  .page-tabs a[aria-current="page"] {
+    background: var(--bg-elev);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Footer */
+  .doc-footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-faint);
+    font-size: 13px;
+  }
+
+  .doc-footer a { color: var(--text-muted); }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+      gap: 32px;
+      padding: 24px 20px 64px;
+    }
+
+    aside {
+      position: static;
+      max-height: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 8px;
+    }
+
+    aside details {
+      cursor: pointer;
+    }
+
+    aside details summary {
+      list-style: none;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    aside details summary::-webkit-details-marker { display: none; }
+
+    aside details summary::after {
+      content: "▾";
+      float: right;
+      color: var(--text-faint);
+    }
+
+    aside details[open] summary::after {
+      content: "▴";
+    }
+
+    aside .toc-title { display: none; }
+
+    .page-tabs { display: flex; flex-wrap: wrap; }
+
+    h1 { font-size: 34px; }
+    h2 { font-size: 25px; margin: 40px 0 12px; }
+    h3 { font-size: 17px; }
+    .doc-header .lede { font-size: 17px; }
+  }
+
+  /* Print */
+  @media print {
+    aside, .page-tabs { display: none; }
+    .layout {
+      display: block;
+      max-width: none;
+      padding: 0;
+    }
+    main { max-width: none; }
+    a { color: var(--text); text-decoration: none; }
+    pre, code { background: #f5f5f5; }
+    h2 { page-break-after: avoid; }
+    pre:not(.mermaid), table { page-break-inside: avoid; }
+    .diagram, pre.mermaid { page-break-inside: auto; page-break-before: auto; }
+    .diagram svg { max-height: 6.3in !important; height: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <details open>
+    <summary>On this page</summary>
+    <p class="toc-title">On this page</p>
+    <nav>
+      <ol>
+        <li><a href="#two-suites">Two suites, two assumptions</a></li>
+        <li><a href="#contrast">The contrast in one line</a></li>
+        <li><a href="#diagram-dt">delivery-team — AI-accelerated sprint</a></li>
+        <li><a href="#diagram-flow">flow — AI-first generate-and-converge</a></li>
+        <li><a href="#gwt">GWT → EARS layered spec</a></li>
+      </ol>
+    </nav>
+  </details>
+</aside>
+
+<main>
+
+<nav class="page-tabs" aria-label="Pages">
+  <a href="delivery-team-vs-flow.html" aria-current="page">delivery-team vs flow</a>
+  <a href="index.html">Using flow</a>
+  <a href="chavruta.html">Chavruta model</a>
+</nav>
+
+<header class="doc-header">
+  <span class="eyebrow">delivery-team vs flow · architecture note</span>
+  <h1>Two approaches to writing code with AI</h1>
+  <p class="lede">Two skill suites to build software with AI from opposite starting assumptions: one accelerates a human sprint, the other rebuilds the pipeline around what agents are good at.</p>
+</header>
+
+<h2 id="two-suites">Two suites, two assumptions <a class="anchor" href="#two-suites" aria-label="Permalink">#</a></h2>
+
+<ul>
+  <li><strong><code>delivery-team</code> — AI acceleration of a traditional human sprint.</strong> A linear, gated pipeline that mirrors a traditional Notion-based sprint process. Each stage maps to a process stage; each agent maps to a job title. AI makes every seat faster, but the shape is the sprint.</li>
+  <li><strong><code>flow</code> — an AI-first approach to building.</strong> The spec is the source of truth and code is regenerated output. An orchestrator dynamically dispatches parallel generators, a multi-objective evaluator scores them on a Pareto front, and the effort <em>converges</em> rather than ending on a calendar date.</li>
+</ul>
+
+<h2 id="contrast">The contrast in one line <a class="anchor" href="#contrast" aria-label="Permalink">#</a></h2>
+
+<table>
+  <thead>
+    <tr><th>Axis</th><th><code>delivery-team</code></th><th><code>flow</code></th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Mental model</td><td>Human sprint, AI in every seat</td><td>Population search over a spec</td></tr>
+    <tr><td>Unit of work</td><td>Story (prose)</td><td>GWT scenario (SCN) → derived EARS (SR) → variants</td></tr>
+    <tr><td>Agents</td><td>Fixed roles = job titles</td><td>Dynamic count = f(complexity)</td></tr>
+    <tr><td>Progress</td><td>Linear stages + gates</td><td>Generations until convergence</td></tr>
+    <tr><td>Quality</td><td>Single-threshold gate</td><td>Multi-objective Pareto front</td></tr>
+    <tr><td>Code</td><td>The artifact</td><td>Regenerated output of the spec</td></tr>
+    <tr><td>Disagreement</td><td>Resolved at a gate</td><td>Preserved with reactivation conditions</td></tr>
+    <tr><td>Cadence</td><td>Time-boxed sprint</td><td>Continuous flow</td></tr>
+  </tbody>
+</table>
+
+<h2 id="diagram-dt">delivery-team — AI-accelerated human sprint <a class="anchor" href="#diagram-dt" aria-label="Permalink">#</a></h2>
+
+<p>A sequential, gated pipeline. One path forward, fixed agent roles, single-threshold gates, and a human go/no-go at every transition.</p>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+    subgraph DT["delivery-team — AI acceleration of a human sprint"]
+        direction TB
+        S1["Stage 1<br/>Problem Brief<br/>(user-researcher)"]
+        S2["Stage 2<br/>Design Intent<br/>(product-designer)"]
+        S3["Stage 3<br/>Technical Spec<br/>stories + EARS ACs<br/>(architect → scrum-master)"]
+        S4["Stage 4<br/>Build — story by story<br/>(frontend / backend / middleware devs)"]
+        S45["Stage 4.5<br/>Release Planning<br/>(release-scorer)"]
+        S5["Stage 5<br/>Cross-Functional Readiness<br/>(gtm / marketing / cx)"]
+        S6["Stage 6<br/>Release — ring 0→3<br/>(release-communicator)"]
+        S7["Stage 7<br/>T+2 Fast-Follow<br/>retro + close"]
+
+        S1 -->|"Gate 1→2"| S2
+        S2 -->|"Gate 2→3"| S3
+        S3 -->|"Gate 3→4"| S4
+        S4 -->|"Gate 4→4.5"| S45
+        S45 -->|"Gate 4.5→5"| S5
+        S5 -->|"Gate 5→6"| S6
+        S6 -->|"Gate 6→7"| S7
+    end
+
+    H["Human HITL<br/>go / no-go at every gate"]
+    H -.approves.-> S1
+    H -.approves.-> S3
+    H -.approves.-> S5
+    H -.approves.-> S6
+
+    QA["QA gate per story<br/>single threshold:<br/>zero blocking failures"]
+    S4 --- QA
+
+    classDef stage fill:#e8f0fe,stroke:#4285f4,color:#1a1a1a;
+    classDef human fill:#fff4e5,stroke:#f59e0b,color:#1a1a1a;
+    class S1,S2,S3,S4,S45,S5,S6,S7 stage;
+    class H,QA human;
+</pre>
+</div>
+<p class="caption">One path forward, gated stage-by-stage, with a human approving each transition.</p>
+
+<p class="traits"><strong>Characteristics:</strong> one path forward · fixed agent roles (= human job titles) · time-boxed sprint · single-threshold gates · code is the artifact · stories in prose · humans gate each transition.</p>
+
+<h2 id="diagram-flow">flow — AI-first generate-and-converge <a class="anchor" href="#diagram-flow" aria-label="Permalink">#</a></h2>
+
+<p>No sprint. The spec (GWT scenarios → derived EARS, executable, versioned) is the source of truth; code is regenerated output. The orchestrator dispatches <em>N</em> parallel generators where <em>N</em> is a function of complexity, not roles. Each writes only to its own variant directory (P1: intelligence parallel, writes serial). A multi-objective evaluator scores variants on a Pareto front; the effort converges rather than ending on a date.</p>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+    SPEC["spec.md + constitution.md<br/>GWT scenarios (SCN) → derived EARS (SR)<br/>executable, versioned<br/>source of truth — code is regenerated"]
+    EVAL["evals/ — multi-objective suite<br/>correctness · perf · maintainability<br/>a11y · security · cost<br/>(versioned, with adversarial holdouts)"]
+
+    SPEC --> ORCH
+
+    ORCH["flow-orchestrator<br/>dynamic dispatch<br/>N = f(complexity), not fixed roles<br/>(P1: writes serialize here)"]
+
+    subgraph GEN["Generation N — intelligence parallel, writes serial"]
+        direction LR
+        V1["generator<br/>bias: simplicity"]
+        V2["generator<br/>bias: performance"]
+        V3["generator<br/>bias: …"]
+    end
+
+    ORCH ==>|"spawn parallel variants<br/>each writes ONLY its own dir"| GEN
+
+    CULL["flow-cull<br/>score vs evals<br/>Pareto front survives<br/>metastable = ship candidate"]
+    EVAL -.feeds.-> CULL
+    GEN --> CULL
+
+    CHAV["flow-chavruta<br/>stability vs velocity reviewers<br/>exit at documented dissent,<br/>not consensus → dissents-active.yaml"]
+    CULL --> CHAV
+
+    CONV{"flow-converge<br/>inter-variant similarity<br/>above threshold?"}
+    CHAV --> CONV
+
+    CONV -->|"no — reheat / new generation"| ORCH
+    CONV -->|"yes — promote 1 survivor"| SHIP["flow-ship<br/>progressive rollout via flags<br/>comms derived from spec delta<br/>post-ship eval monitoring"]
+
+    MON["flow-dissent-monitor<br/>watches commits for<br/>reactivation triggers"]
+    SHIP -.monitored.-> MON
+    MON -.reactivated dissent.-> ORCH
+
+    classDef truth fill:#e6f4ea,stroke:#34a853,color:#1a1a1a;
+    classDef agent fill:#f3e8fd,stroke:#a142f4,color:#1a1a1a;
+    classDef gen fill:#fce8e6,stroke:#ea4335,color:#1a1a1a;
+    classDef decision fill:#fff4e5,stroke:#f59e0b,color:#1a1a1a;
+    class SPEC,EVAL truth;
+    class ORCH,CULL,CHAV,SHIP,MON agent;
+    class V1,V2,V3 gen;
+    class CONV decision;
+</pre>
+</div>
+<p class="caption">A spec-driven generate → score → converge loop; no calendar, no fixed roles.</p>
+
+<p class="traits"><strong>Characteristics:</strong> spec → regenerated code · dynamic agent count (function-shaped, not role-shaped) · parallel reads/generation, serialized writes · multi-objective Pareto evaluation (no single gate) · continuous flow to convergence (no time box) · preserved dissent with reactivation, not forced consensus.</p>
+
+<h2 id="gwt">GWT → EARS layered spec <a class="anchor" href="#gwt" aria-label="Permalink">#</a></h2>
+
+<blockquote>
+  <p><strong>Status: implemented &amp; merged</strong>. <code>flow</code>'s entry unit of work is a <strong>Given/When/Then behavioral scenario</strong> (<code>SCN-{NNN}</code>) that derives the EARS requirements (<code>SR-{NNN}</code>) — so the spec is <em>user/product-focused first</em> rather than engineering-spec-first. See <code>flow/context/flow-spec-protocol.md</code> and <code>flow/context/flow-philosophy.md</code> (P3).</p>
+</blockquote>
+
+<p>Previously <code>flow-spec-writer</code> converted natural language straight to EARS (<code>The {system} shall…</code>), a <em>system-centric</em> grammar. Leading with GWT keeps observable user behavior primary and defers system decomposition. It also pays off twice: a GWT scenario is already a graded example, so the scenarios double as <code>flow</code>'s eval datasets (P4).</p>
+
+<h3>The layered spec — scenarios first, requirements derived</h3>
+
+<ol>
+  <li><strong>Behavioral layer (primary): GWT scenarios.</strong> <code>Given &lt;context&gt;, When &lt;event&gt;, Then &lt;observable outcome&gt;.</code> Authored from the actor's perspective. This is what the human reviews and what <code>flow-narrator</code> derives comms from.</li>
+  <li><strong>Normative layer (derived): EARS requirements.</strong> Each scenario expands into the <code>SR-{NNN}</code> requirements that must hold for it to pass. EARS stays load-bearing and parseable — it just sits <em>downstream</em> of behavior.</li>
+  <li><strong>Conformance layer: graders + datasets.</strong> GWT scenarios seed <code>evals/datasets/</code> directly; EARS requirements still map to graders via <code>evals/harness.yaml</code>.</li>
+</ol>
+
+<p><strong>Why keep EARS, not go pure GWT.</strong> The very dimensions on <code>flow</code>'s Pareto front — security, perf, cost — are often <em>not</em> user-observable events, so they don't fit <code>Given/When/Then</code> cleanly. EARS's ubiquitous/state-driven forms cover the ambient requirements GWT can't. Use quality-attribute scenarios for the few non-functional cases that do warrant a scenario, and let EARS carry the rest.</p>
+
+<p><strong>Traceability:</strong> <code>SCN-{NNN}</code> (scenario) → <code>SR-{NNN}</code> (requirement) → grader + dataset. This preserves the existing conformance-mapping discipline while adding a product-first front door.</p>
+
+<p><strong>Implemented across 12 files:</strong> the spec protocol and P3 philosophy (behavioral layer + <code>SCN</code>/<code>SR</code> model), <code>flow-spec-writer</code> and the <code>/flow-spec</code> command (scenario-first authoring, <code>--requirement</code> fast-path for non-functional SRs), the eval protocol and <code>/flow-eval</code> (scenarios seed correctness datasets), <code>flow-generator</code> / <code>/flow-generate</code> (variants implement SCN + SR), <code>flow-orchestrator</code>, <code>flow-narrator</code> (comms led by SCN), <code>/flow-init</code> (scenario-first initial spec), and the README + USAGE docs.</p>
+
+</main>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: dark ? 'dark' : 'neutral',
+    securityLevel: 'loose',
+    flowchart: { useMaxWidth: true, htmlLabels: true }
+  });
+</script>
+
+<script>
+  // Highlight active section in TOC as the reader scrolls.
+  (function() {
+    const tocLinks = Array.from(document.querySelectorAll('aside nav a'));
+    const idToLink = new Map(
+      tocLinks
+        .map(a => [a.getAttribute('href').replace('#', ''), a])
+        .filter(([id]) => id)
+    );
+    const headings = Array.from(idToLink.keys())
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    if (!('IntersectionObserver' in window) || headings.length === 0) return;
+
+    let visible = new Set();
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          visible.add(entry.target.id);
+        } else {
+          visible.delete(entry.target.id);
+        }
+      });
+
+      tocLinks.forEach(a => a.classList.remove('active'));
+
+      let active = null;
+      for (const h of headings) {
+        if (visible.has(h.id)) { active = h.id; break; }
+      }
+      if (!active) {
+        const scroll = window.scrollY + 120;
+        for (const h of headings) {
+          if (h.offsetTop <= scroll) active = h.id;
+        }
+      }
+      if (active && idToLink.has(active)) {
+        idToLink.get(active).classList.add('active');
+      }
+    }, { rootMargin: '-10% 0px -60% 0px', threshold: 0 });
+
+    headings.forEach(h => observer.observe(h));
+  })();
+</script>
+
+</body>
+</html>

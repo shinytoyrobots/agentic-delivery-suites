@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Using flow — the AI-first delivery suite</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --bg-elev: #ffffff;
+    --bg-code: #f4f1ea;
+    --bg-callout: #fef6e4;
+    --border: #e5e0d4;
+    --border-soft: #ede9de;
+    --text: #1f2125;
+    --text-muted: #6a6760;
+    --text-faint: #93908a;
+    --accent: #b45309;
+    --accent-soft: #fde8c8;
+    --link: #92400e;
+    --link-hover: #7c2d12;
+    --code-text: #2a2724;
+    --table-stripe: #f7f4ed;
+    --max-width: 1180px;
+    --content-max: 720px;
+    --sidebar-width: 280px;
+    --serif: ui-serif, Charter, "Iowan Old Style", "Apple Garamond", Georgia, Cambria, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18171a;
+      --bg-elev: #1f1e22;
+      --bg-code: #25242a;
+      --bg-callout: #2a241a;
+      --border: #34323a;
+      --border-soft: #2a2930;
+      --text: #e8e4dc;
+      --text-muted: #a09c93;
+      --text-faint: #6f6c66;
+      --accent: #f59e0b;
+      --accent-soft: #4a371b;
+      --link: #fbbf24;
+      --link-hover: #fcd34d;
+      --code-text: #d8d4cc;
+      --table-stripe: #1c1b1f;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 24px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .layout {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+
+  /* Sidebar / TOC */
+  aside {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px;
+    font-size: 14px;
+  }
+
+  aside .toc-title {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-faint);
+    margin: 0 0 12px;
+    padding: 0 12px;
+  }
+
+  aside nav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  aside nav li {
+    margin: 0;
+    padding: 0;
+  }
+
+  aside nav a {
+    display: block;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    line-height: 1.4;
+  }
+
+  aside nav a:hover {
+    color: var(--text);
+    background: var(--border-soft);
+  }
+
+  aside nav a.active {
+    color: var(--link);
+    border-left-color: var(--accent);
+    font-weight: 500;
+  }
+
+  aside nav ol ol a {
+    padding-left: 28px;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  /* Main content */
+  main {
+    max-width: var(--content-max);
+    min-width: 0;
+  }
+
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    color: var(--text);
+  }
+
+  .doc-header .lede {
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 56px 0 16px;
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+
+  h3 {
+    font-size: 19px;
+    line-height: 1.35;
+    font-weight: 600;
+    margin: 36px 0 12px;
+    color: var(--text);
+    scroll-margin-top: 24px;
+  }
+
+  .anchor {
+    color: var(--text-faint);
+    text-decoration: none;
+    opacity: 0;
+    margin-left: 8px;
+    font-weight: 400;
+    transition: opacity 0.15s, color 0.15s;
+  }
+
+  h2:hover .anchor, h3:hover .anchor {
+    opacity: 1;
+  }
+
+  .anchor:hover {
+    color: var(--accent);
+  }
+
+  p, ul, ol {
+    margin: 0 0 18px;
+  }
+
+  ul, ol {
+    padding-left: 24px;
+  }
+
+  li {
+    margin-bottom: 6px;
+  }
+
+  a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: rgba(146, 64, 14, 0.3);
+    text-underline-offset: 3px;
+    transition: color 0.15s, text-decoration-color 0.15s;
+  }
+
+  a:hover {
+    color: var(--link-hover);
+    text-decoration-color: currentColor;
+  }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-code);
+    color: var(--code-text);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+  }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 20px 0 24px;
+    line-height: 1.55;
+    font-size: 13.5px;
+  }
+
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: var(--code-text);
+  }
+
+  blockquote {
+    margin: 24px 0;
+    padding: 16px 20px;
+    background: var(--bg-callout);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  blockquote p {
+    margin: 0;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0 28px;
+    font-size: 14.5px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  th {
+    text-align: left;
+    background: var(--border-soft);
+    padding: 10px 14px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+    color: var(--text);
+  }
+
+  tr:nth-child(even) td {
+    background: var(--table-stripe);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  td code, th code {
+    font-size: 0.9em;
+  }
+
+  /* Phase callout styling on h3 sections */
+  .phase {
+    margin-top: 36px;
+  }
+
+  /* Top-level page tabs */
+  .page-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 0 36px;
+    background: var(--bg-code);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+  }
+
+  .page-tabs a {
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 7px 15px;
+    border-radius: 7px;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+
+  .page-tabs a:hover {
+    color: var(--text);
+    background: var(--border-soft);
+  }
+
+  .page-tabs a[aria-current="page"] {
+    background: var(--bg-elev);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Footer */
+  .doc-footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-faint);
+    font-size: 13px;
+  }
+
+  .doc-footer a { color: var(--text-muted); }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+      gap: 32px;
+      padding: 24px 20px 64px;
+    }
+
+    aside {
+      position: static;
+      max-height: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 8px;
+    }
+
+    aside details {
+      cursor: pointer;
+    }
+
+    aside details summary {
+      list-style: none;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    aside details summary::-webkit-details-marker { display: none; }
+
+    aside details summary::after {
+      content: "▾";
+      float: right;
+      color: var(--text-faint);
+    }
+
+    aside details[open] summary::after {
+      content: "▴";
+    }
+
+    aside .toc-title { display: none; }
+
+    .page-tabs { display: flex; flex-wrap: wrap; }
+
+    h1 { font-size: 34px; }
+    h2 { font-size: 25px; margin: 40px 0 12px; }
+    h3 { font-size: 17px; }
+    .doc-header .lede { font-size: 17px; }
+  }
+
+  /* Print */
+  @media print {
+    aside, .page-tabs { display: none; }
+    .layout {
+      display: block;
+      max-width: none;
+      padding: 0;
+    }
+    main { max-width: none; }
+    a { color: var(--text); text-decoration: none; }
+    pre, code { background: #f5f5f5; }
+    h2 { page-break-after: avoid; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <details open>
+    <summary>On this page</summary>
+    <p class="toc-title">On this page</p>
+    <nav>
+      <ol>
+        <li><a href="#what-flow-is">What flow is</a></li>
+        <li><a href="#why-it-exists">Why it exists</a></li>
+        <li>
+          <a href="#what-you-get">What you get</a>
+          <ol>
+            <li><a href="#decision-quality">Decision quality</a></li>
+            <li><a href="#consistent-comms">Consistent comms</a></li>
+            <li><a href="#structural-memory">Structural memory</a></li>
+            <li><a href="#end-to-end-optimization">End-to-end optimization</a></li>
+            <li><a href="#no-close-ceremony">No close ceremony</a></li>
+          </ol>
+        </li>
+        <li><a href="#what-you-dont-get">Anti-features</a></li>
+        <li><a href="#when-to-use">When to use flow</a></li>
+        <li>
+          <a href="#how-to-use-it">How to use it</a>
+          <ol>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#phase-1">Phase 1 — Initialize</a></li>
+            <li><a href="#phase-2">Phase 2 — Evolve the spec</a></li>
+            <li><a href="#phase-3">Phase 3 — Author evals</a></li>
+            <li><a href="#phase-4">Phase 4 — Generate &amp; cull</a></li>
+            <li><a href="#phase-5">Phase 5 — Converge or anneal</a></li>
+            <li><a href="#phase-6">Phase 6 — Review &amp; ship</a></li>
+            <li><a href="#cross-cutting">Cross-cutting skills</a></li>
+          </ol>
+        </li>
+        <li><a href="#walkthrough">A walkthrough sketch</a></li>
+        <li><a href="#state">State at a glance</a></li>
+        <li><a href="#validating">Validating that flow is working</a></li>
+      </ol>
+    </nav>
+  </details>
+</aside>
+
+<main>
+
+<nav class="page-tabs" aria-label="Pages">
+  <a href="delivery-team-vs-flow.html">delivery-team vs flow</a>
+  <a href="index.html" aria-current="page">Using flow</a>
+  <a href="chavruta.html">Chavruta model</a>
+</nav>
+
+<header class="doc-header">
+  <span class="eyebrow">flow · practitioner's guide</span>
+  <h1>Using flow</h1>
+  <p class="lede">Most AI delivery tools graft language models onto existing Scrum workflows. <code>flow</code> doesn't.</p>
+</header>
+
+<p>Scrum exists because humans get tired, change their minds, and need ceremony to coordinate. Agents have none of those problems. The rituals that compensate for them — sprints, stories, retros, readiness gates, fixed roles — aren't features. They're scar tissue from a constraint that no longer applies.</p>
+
+<p>This is the practitioner's guide. If you're deciding whether <code>flow</code> fits your work, read the rationale and the benefits. If you've decided to try it, skip to the walkthrough. The philosophy in dense form is in <code>context/flow-philosophy.md</code>; the directory schema is in <code>context/flow-state-model.md</code>. This document is the bridge.</p>
+
+<blockquote>
+  <p><strong>Reader note.</strong> This doc frames <code>flow</code> against its sibling suite <code>delivery-team</code>. If you haven't used <code>delivery-team</code>, skim the comparisons and go straight to the principles and walkthrough.</p>
+</blockquote>
+
+<h2 id="what-flow-is">What flow is <a class="anchor" href="#what-flow-is" aria-label="Permalink">#</a></h2>
+
+<p>A Claude Code skills suite that runs software delivery as continuous flow toward convergence.</p>
+
+<p>The unit of work is not a story. It's a <strong>generation</strong>: a population of implementation variants produced from a versioned spec, scored against a multi-objective eval suite, culled to a Pareto front, and either advanced or shipped. No sprint. No retro. No readiness gate. No fixed role topology.</p>
+
+<p>The spec itself is two layers. <strong>GWT behavioral scenarios</strong> (<code>SCN-{NNN}</code>) are the product-facing layer — Given/When/Then examples a human authors and reviews, which also seed the eval datasets. <strong>EARS requirements</strong> (<code>SR-{NNN}</code>) are the system-centric layer — either decomposing a scenario's acceptance criteria or capturing ambient non-functional constraints (performance, security, cost) with no scenario parent. The two are complementary, not alternatives.</p>
+
+<p>The exit is convergence. The calendar doesn't get a vote.</p>
+
+<p><code>delivery-team</code> accelerates a Scrum team's workflow with AI. <code>flow</code> discards the Scrum scaffolding and rebuilds the pipeline around what LLM agents are good at — parallel reading, structured scoring, deterministic projection — and what they are famously bad at — parallel writes, free-form coordination, drifting prose. The two suites are siblings in this repo, designed for head-to-head comparison.</p>
+
+<h2 id="why-it-exists">Why it exists <a class="anchor" href="#why-it-exists" aria-label="Permalink">#</a></h2>
+
+<p><code>flow</code> is the operational answer to six findings in the 2024–2026 compound-AI research literature. Each finding contradicts a structural assumption the older <code>delivery-team</code> suite carries forward from human workflows. The short form follows.</p>
+
+<p><strong>P1 — Intelligence parallel, writes serial.</strong> Cognition AI's 2025 "Don't Build Multi-Agents" pivot. Parallel writes by independent agents accumulate conflicting implicit decisions. The narrow case where multi-agent works is parallel readers feeding a single decision-maker. <code>delivery-team</code> violates this whenever its frontend, backend, and middleware devs author against the same story in parallel.</p>
+
+<p><strong>P2 — Dynamic dispatch over fixed roles.</strong> Stanford's MASS paper (2025) shows that optimizing pipeline topology and prompts beats fixed agent role-play by 78.8%. Anthropic's multi-agent research system dispatches by complexity — one agent for simple tasks, two-to-four for comparisons, ten or more for complex research — and gets 90% improvement over single-agent. Roles are a human hiring compromise. They are not an architectural property.</p>
+
+<p><strong>P3 — Spec as source of truth, code as regenerated output.</strong> Drew Breunig's <code>whenwords</code> library (Feb 2026) has zero human-written code, 750 conformance tests, and is maintained spec-only. Tessl, Kiro, and GitHub Spec-kit are production-grade. Stories drift from code; specs don't, because code is rebuilt from them.</p>
+
+<p><strong>P4 — Multi-objective Pareto evaluation over single-threshold gates.</strong> Stanford's Optimas (ICLR 2026) and Anthropic's eval engineering work converge on the same point: quality is a vector. Single thresholds — the classic "80% coverage" — invite Goodhart-gaming. Multi-objective fronts plus adversarial holdouts resist it.</p>
+
+<p><strong>P5 — Continuous flow over time-boxed cycles.</strong> Sprints time-box human commitment uncertainty. Agents don't have that uncertainty. The calendar is arbitrary. Convergence is the natural exit.</p>
+
+<p><strong>P6 — Preserved dissent with reactivation conditions.</strong> Borrowed laterally from the Talmudic chavruta pattern. The minority position in a review becomes a structured object with an explicit condition under which it would later be vindicated. A monitor watches every commit for that condition. Institutional memory stops being ceremonial and becomes structural.</p>
+
+<p>These six aren't aspirational. Every skill in the suite traces back to them, and the skills cite them as P1–P6 when a design choice needs defending.</p>
+
+<h2 id="what-you-get">What you get <a class="anchor" href="#what-you-get" aria-label="Permalink">#</a></h2>
+
+<p>Five benefits. Each one is tied to a mechanism, not a slogan.</p>
+
+<h3 id="decision-quality">Decision quality from population search <a class="anchor" href="#decision-quality" aria-label="Permalink">#</a></h3>
+
+<p><code>delivery-team</code> builds one implementation per story and asks "did it pass?" <code>flow</code> builds five (default; the orchestrator scales from 1 to 10 by complexity, with a hotfix bypass to a single serialized variant) and asks "which trades off which way?" Five Pareto-scored variants give gradient signal — this one is faster but more complex, that one is simpler but slower — instead of a binary pass/fail on a single attempt.</p>
+
+<p>The cost is real. Roughly 5x generation tokens per effort. A medium feature runs $5–15 per generation (estimate), against $1–3 for a single-implementation <code>delivery-team</code> run. With Sonnet or Haiku for generators and Opus reserved for the orchestrator and evaluator, the delta is meaningful but not prohibitive. On bounded problems with clear eval surfaces, the decision-quality gain pays for it.</p>
+
+<h3 id="consistent-comms">Consistent comms via spec projection <a class="anchor" href="#consistent-comms" aria-label="Permalink">#</a></h3>
+
+<p><code>delivery-team</code>'s Stage 5 launches Marketing, GTM, and CX/Support agents in parallel to produce launch artifacts. Each rediscovers the spec delta independently. <code>flow-narrator</code> reads <code>git diff(spec_N, spec_N+1)</code> once and projects it into every audience tier — changelog, sales talking points, support doc, marketing brief — at the same time, from the same source. Consistency is structural, not editorial.</p>
+
+<p>A spec amendment that adds rate limiting becomes a changelog entry, a sales note about "now supports controlled-burst customers," and a support doc on the new 429 status code. All derived. Never authored ad-hoc. Never out of sync with what shipped.</p>
+
+<h3 id="structural-memory">Structural institutional memory <a class="anchor" href="#structural-memory" aria-label="Permalink">#</a></h3>
+
+<p><code>delivery-team</code> archives the adversarial PM review at gate-close. Nothing watches it afterward. <code>flow</code> writes every dissent to <code>efforts/{slug}/dissents-active.yaml</code> with explicit reactivation conditions — for example, "the stability reviewer argued this breaks if request volume exceeds 10x baseline; flag if <code>req-throughput &gt; 10x</code> enters the spec." <code>flow-dissent-monitor</code> runs on every commit and surfaces matching dissents as check findings.</p>
+
+<p>The pattern is designed to compound. The first three efforts produce no surfaced dissents — the registry is warming up. By effort five or six, it should begin rediscovering objections that human teams routinely forget. That's the expectation, not an observed outcome. <code>flow</code> is new; no effort has yet reached that range.</p>
+
+<h3 id="end-to-end-optimization">End-to-end optimization is unblocked <a class="anchor" href="#end-to-end-optimization" aria-label="Permalink">#</a></h3>
+
+<p><code>delivery-team</code>'s 13 statically wired agents cannot be optimized as a system. There is no end-to-end metric to train against. <code>flow</code>'s pipeline is structurally a DSPy-compatible program: predictor modules, tool calls, control flow, metric. Whether or not you ever run the optimizer — Optimas, MIPRO, GEPA — the option is architecturally available. The system can be measured as a single function from problem to ship.</p>
+
+<h3 id="no-close-ceremony">No close ceremony, no false closure <a class="anchor" href="#no-close-ceremony" aria-label="Permalink">#</a></h3>
+
+<p><code>delivery-team</code> runs <code>dt-close</code> at the end of every sprint, producing a summary and a retro. Sprints close on the calendar, even when the work hasn't reached a natural stopping point. <code>flow</code> has no <code>flow-close</code> and no <code>flow-retro</code>. An effort transitions to <code>shipped/</code> when convergence is reached or a metastable variant is selected. The retro function is absorbed into the cull cycle — every generation produces a diff between predicted and actual eval scores, so learning becomes structural rather than ceremonial.</p>
+
+<p>Most "close" rituals manufacture closure on work that should remain open, and re-open it implicitly the next sprint. <code>flow</code> doesn't manufacture closure.</p>
+
+<h2 id="what-you-dont-get">What you don't get (anti-features) <a class="anchor" href="#what-you-dont-get" aria-label="Permalink">#</a></h2>
+
+<p>Five things <code>flow</code> deliberately omits. Each absence is research-flagged.</p>
+
+<ul>
+  <li><strong>No parallel writes.</strong> Generators run in parallel but write only to their own variant directories. Only <code>flow-converge</code> promotes a single survivor to the working tree.</li>
+  <li><strong>No purely evolutionary search.</strong> AlphaEvolve works on well-defined computable objectives. Product work is partially open-ended. Variants exist within spec-bounded constraint space, not free generation.</li>
+  <li><strong>No automated metric optimization without HITL.</strong> Goodhart's law is real. The human preference-articulator role is non-optional for spec evolution and eval design.</li>
+  <li><strong>No spec-as-source maturity at v1.</strong> <code>flow</code> ships at Fowler's level 2 (spec-anchored): specs are primary, code is regenerated on spec change, but legacy paths can be edited directly when conformance tests are intact. Level 3 — spec-only edits — is a future state.</li>
+  <li><strong>No full elimination of role narrative.</strong> Generators get constraint variation (one biased for performance, another for simplicity) but the underlying agent is the same function. Niche differentiation is a runtime parameter, not an identity.</li>
+</ul>
+
+<h2 id="when-to-use">When to use flow, when to stay on delivery-team <a class="anchor" href="#when-to-use" aria-label="Permalink">#</a></h2>
+
+<p><code>flow</code> is the right tool when:</p>
+<ul>
+  <li>The problem can be written as GWT scenarios plus testable EARS requirements.</li>
+  <li>The eval surface is instrument-able — correctness, performance, accessibility have measurable signals.</li>
+  <li>The work is bounded enough that running five variants isn't prohibitive.</li>
+  <li>You want population-search decision quality and are willing to pay the token cost.</li>
+</ul>
+
+<p>Stay on <code>delivery-team</code> when:</p>
+<ul>
+  <li>The spec genuinely cannot be written precisely (exploratory research, brand-new product surface).</li>
+  <li>Stakeholders need Scrum vocabulary for organizational legibility.</li>
+  <li>External dependencies dominate the schedule and population search adds no signal.</li>
+</ul>
+
+<p>The <code>flow</code> constitution includes an explicit escape hatch: if spec confidence drops below threshold, drop to <code>delivery-team</code> story mode. The two suites are not exclusive.</p>
+
+<h2 id="how-to-use-it">How to use it <a class="anchor" href="#how-to-use-it" aria-label="Permalink">#</a></h2>
+
+<p>The lifecycle is six phases. Skills are user-invoked slash commands; agents are background functions skills dispatch (e.g., <code>flow-init</code> dispatches <code>flow-spec-writer</code>, <code>flow-evaluator</code>, and <code>flow-context-curator</code>). You invoke skills. The orchestrator decides which agents to spawn.</p>
+
+<h3 id="prerequisites">Prerequisites <a class="anchor" href="#prerequisites" aria-label="Permalink">#</a></h3>
+
+<p>Before running any flow skill:</p>
+<ul>
+  <li>Claude Code installed and able to read <code>~/.claude/commands/</code></li>
+  <li>The <code>flow</code> suite linked into <code>~/.claude/commands/</code> (symlinked from this repo)</li>
+  <li>A working directory — greenfield or an existing codebase with git initialized</li>
+  <li>Working familiarity with EARS notation (Easy Approach to Requirements Syntax) — see <code>context/flow-spec-protocol.md</code> if unfamiliar</li>
+  <li>A purpose paragraph for the effort: what problem you're solving and why</li>
+</ul>
+
+<p>The walkthrough below lists each skill in the order you'd invoke them on a typical effort.</p>
+
+<h3 id="phase-1" class="phase">Phase 1 — Initialize the effort <a class="anchor" href="#phase-1" aria-label="Permalink">#</a></h3>
+
+<pre><code>/flow-init &lt;effort-slug&gt; [--from-spec &lt;path&gt;] [--from-delivery-team &lt;effort&gt;]</code></pre>
+
+<p><code>flow-init</code> bootstraps the directory structure. It asks for a purpose paragraph, the codebase path, your HITL mode, any hard prohibitions, and the starting temperature. It then writes:</p>
+
+<ul>
+  <li><code>spec/spec.md</code> — initial EARS-formatted executable spec (may be skeletal)</li>
+  <li><code>spec/constitution.md</code> — governance: prohibitions, preferences, escalation triggers</li>
+  <li><code>evals/harness.yaml</code> — eval suite scaffolded with six default dimensions (correctness, performance, maintainability, accessibility, security, cost)</li>
+  <li><code>efforts/{slug}/flow-state.yaml</code> — convergence score, temperature, WIP spread, Pareto front, active dissents</li>
+  <li><code>.flow-index/</code> — codebase index for context curation</li>
+</ul>
+
+<p>Flags: <code>--from-spec &lt;path&gt;</code> ingests an existing PRD as the spec seed; <code>--from-delivery-team &lt;effort&gt;</code> migrates from a prior sprint-shaped effort.</p>
+
+<p>This step is <strong>not idempotent</strong>. Re-running on an existing effort halts.</p>
+
+<h3 id="phase-2" class="phase">Phase 2 — Evolve the spec <a class="anchor" href="#phase-2" aria-label="Permalink">#</a></h3>
+
+<pre><code>/flow-spec &lt;natural-language intent or "amend SR-NNN ..."&gt; | --restructure | --constitution</code></pre>
+
+<p>Any time intent changes, route it through <code>flow-spec</code>. It refuses vague natural language: user journeys become GWT scenarios (<code>SCN-{NNN}</code>), and non-functional intents become derived EARS requirements (<code>SR-{NNN}</code>). It versions <code>spec/spec.md</code>, writes an entry in <code>spec/history/</code>, and triggers a dissent reactivation check — a spec change may match an archived dissent's condition.</p>
+
+<p><code>--restructure</code> groups SRs without changing semantics. <code>--constitution</code> amends <code>spec/constitution.md</code> — prohibitions, preferences, escalation triggers, dispatch overrides — which is the only sanctioned way to change governance after init.</p>
+
+<p>The spec is the contract every downstream skill assumes. Skip <code>flow-spec</code> and edit requirements ad-hoc, and the chain breaks silently.</p>
+
+<h3 id="phase-3" class="phase">Phase 3 — Author the eval suite <a class="anchor" href="#phase-3" aria-label="Permalink">#</a></h3>
+
+<pre><code>/flow-eval [dimension-name] | --add-dataset &lt;dim&gt; &lt;path&gt; | --refine &lt;grader&gt; | --threshold &lt;dim&gt; &lt;value&gt;</code></pre>
+
+<p><code>flow-eval</code> populates the per-dimension datasets and graders. Each dimension needs at least one real-world dataset; correctness and security additionally require an adversarial holdout (Goodhart mitigation). Run with no arguments for an interactive walk through the suite. Use the targeted flags to add datasets, refine graders, or adjust thresholds.</p>
+
+<p>Evals are a first-class versioned artifact. They aren't a test harness — they're the executable half of the spec contract.</p>
+
+<h3 id="phase-4" class="phase">Phase 4 — Generate and cull <a class="anchor" href="#phase-4" aria-label="Permalink">#</a></h3>
+
+<pre><code>/flow-generate [scope SR-IDs or "all"] [--hotfix] [--N &lt;count&gt;]
+/flow-cull     [--depth quick|standard|deep|adversarial]</code></pre>
+
+<p><code>flow-generate</code> dispatches generator agents in parallel. Default population is 5; the orchestrator scales from 1 to 10 based on complexity (SR count, blast radius, plateau state, temperature). <code>--hotfix</code> bypasses population search entirely and serializes a single variant. <code>--N</code> overrides the orchestrator's choice. Each generator gets a distinct constraint bias (<code>simplicity</code>, <code>performance</code>, <code>maintainability</code>, <code>security</code>, <code>convention</code>, plus <code>radical</code> at high temperatures) and writes to its own variant directory under <code>efforts/{slug}/generations/gen-{N}/population/</code>.</p>
+
+<p><code>flow-cull</code> runs the eval suite against each variant, computes the Pareto front, archives strictly-dominated variants, and flags any metastable candidates — stable intermediate states with partial spec proximity that are first-class ship candidates, not WIP. The <code>--depth</code> flag controls eval depth; <code>adversarial</code> runs the Goodhart-detection passes.</p>
+
+<h3 id="phase-5" class="phase">Phase 5 — Converge or anneal <a class="anchor" href="#phase-5" aria-label="Permalink">#</a></h3>
+
+<pre><code>/flow-converge [--force-ship | --force-iterate]
+/flow-anneal   heat | cool | reset | --to &lt;0.0-1.0&gt; | --status</code></pre>
+
+<p><code>flow-converge</code> checks two signals: inter-variant similarity (have the survivors converged on a solution shape?) and Pareto-front stability (are the dimension scores still climbing?). If converged, it triggers <code>flow-chavruta</code> and prepares to ship. If not, it advances to gen N+1. The <code>--force-*</code> flags override the recommendation when the operator has out-of-band judgment.</p>
+
+<p><code>flow-anneal</code> adjusts the temperature parameter. When the front plateaus across two generations without progress, <code>heat</code> widens exploration and forces constraint-variation divergence. Cool it back down as convergence reapproaches. Reheating triggers — eval plateau, architectural blocker, dissent reactivation cluster — fire automatically; this skill is the manual override.</p>
+
+<h3 id="phase-6" class="phase">Phase 6 — Review, ship, monitor <a class="anchor" href="#phase-6" aria-label="Permalink">#</a></h3>
+
+<pre><code>/flow-chavruta [variant-id | "spec-change" | "metastable"]
+/flow-ship     &lt;variant-id&gt; | --metastable | --rollback &lt;ship-id&gt;</code></pre>
+
+<p><code>flow-chavruta</code> runs the stability-bias and velocity-bias reviewers against the survivor. <strong>Their disagreement is the deliverable.</strong> The review exits at documented disagreement with provisional resolution and explicit reactivation conditions — not at consensus. Dissents append to <code>dissents-active.yaml</code>.</p>
+
+<p><code>flow-ship</code> promotes the variant to the working tree, runs progressive rollout via feature flags, and invokes <code>flow-narrator</code> to derive audience-tiered comms from the spec delta. <code>--metastable</code> ships a stable intermediate state that doesn't yet hit every threshold but is valuable as-is. <code>--rollback</code> reverts a prior ship by ID. Post-ship, the eval-front continues running in production.</p>
+
+<h3 id="cross-cutting" class="phase">Cross-cutting skills <a class="anchor" href="#cross-cutting" aria-label="Permalink">#</a></h3>
+
+<p>These aren't phase-bound. Invoke any time:</p>
+
+<ul>
+  <li><code>/flow-pulse [--comms | --verbose | --json]</code> — read-only state report: convergence score, Pareto front, temperature, WIP spread, active dissents. The single status command. No sprint velocity. <code>--comms</code> projects the current spec-delta into audience-tiered comms on demand.</li>
+  <li><code>/flow-dissent --list-active | --list-reactivated | --check | acknowledge &lt;id&gt; | mitigate &lt;id&gt; --commit &lt;sha&gt; | resolve &lt;id&gt; --reason &lt;text&gt;</code> — query the registry, run a manual reactivation check, or take action on a surfaced dissent.</li>
+</ul>
+
+<h2 id="walkthrough">A walkthrough sketch <a class="anchor" href="#walkthrough" aria-label="Permalink">#</a></h2>
+
+<p>Illustrative, not a script. A first effort using <code>flow</code> typically runs three to four generations before convergence. Rough shape:</p>
+
+<ol>
+  <li><strong>Init.</strong> <code>/flow-init customer-portal-rewrite</code> with a purpose paragraph and the codebase path. Skeletal spec with 3–5 SRs. Default temperature 0.5.</li>
+  <li><strong>Spec authoring.</strong> Two or three <code>/flow-spec</code> passes to firm up the GWT scenarios and their derived EARS requirements. HITL counter-prompts vague NL into testable form.</li>
+  <li><strong>Eval bootstrapping.</strong> <code>/flow-eval</code> populates the datasets. Correctness and security get adversarial holdouts.</li>
+  <li><strong>Gen 1.</strong> <code>/flow-generate</code> spawns 5 variants. <code>/flow-cull</code> reveals two on the Pareto front, three dominated. <code>/flow-converge</code> says no — inter-variant similarity is low.</li>
+  <li><strong>Gen 2.</strong> Generators re-run against the spec, biased by the gen-1 front. Similarity rises but the maintainability dimension plateaus.</li>
+  <li><strong>Reheat.</strong> <code>/flow-anneal heat</code>. A new constraint-bias is seeded.</li>
+  <li><strong>Gen 3.</strong> Survivors converge. Pareto front is stable. <code>/flow-chavruta</code> runs and produces one dissent — stability reviewer flags a load-spike condition.</li>
+  <li><strong>Ship.</strong> <code>/flow-ship</code> promotes the survivor, flags it behind a percentage rollout, and <code>flow-narrator</code> projects the spec delta into the changelog, sales note, and support doc.</li>
+</ol>
+
+<p>The whole cycle is convergence-bound. No sprint number on any of these artifacts.</p>
+
+<h2 id="state">State at a glance <a class="anchor" href="#state" aria-label="Permalink">#</a></h2>
+
+<p><code>flow-state.yaml</code> is the single readable state file. Key fields:</p>
+
+<table>
+  <thead>
+    <tr><th>Field</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>current-generation</code></td><td>The active generation number</td></tr>
+    <tr><td><code>convergence-score</code></td><td>0..1; ship threshold is 0.85 by default</td></tr>
+    <tr><td><code>temperature</code></td><td>0..1; 1.0 = full explore, 0.0 = full exploit</td></tr>
+    <tr><td><code>wip-spread</code></td><td>Admission cost for new work items (price signal, not cap)</td></tr>
+    <tr><td><code>pareto-front</code></td><td>Best score per dimension across the current generation</td></tr>
+    <tr><td><code>active-dissents</code></td><td>Count; full records in <code>dissents-active.yaml</code></td></tr>
+    <tr><td><code>hitl-mode</code></td><td><code>preference-articulator</code> / <code>comprehension-auditor</code> / <code>reactivation-watch</code> / <code>autonomous</code></td></tr>
+  </tbody>
+</table>
+
+<p><code>/flow-pulse</code> reads this file and prints a human-readable summary.</p>
+
+<h2 id="validating">Validating that flow is working <a class="anchor" href="#validating" aria-label="Permalink">#</a></h2>
+
+<p>The suite is opinionated. It should be testable.</p>
+
+<p><code>README.md</code> lists the six-metric A/B harness — three velocity dimensions (wall-clock, token spend, human review burden) and three quality dimensions (eval-front coverage, defect rate at +14 days, comprehension cost at +7 days) — along with the decision rule and the tie back to the research source. Run the comparison head-to-head against <code>delivery-team</code> on a single effort. Use the data, not intuition, to decide whether to keep going.</p>
+
+<p>Two limits worth naming up front. Fourteen days is too short to measure long-term comprehension debt. The dissent registry's value is cumulative — it won't show up until effort five or six. Plan a re-measurement at 90 days and across multiple efforts before drawing firm conclusions.</p>
+
+<footer class="doc-footer">
+  <p>flow · AI-first delivery suite · companion to <code>README.md</code></p>
+</footer>
+
+</main>
+
+</div>
+
+<script>
+  // Highlight active section in TOC as the reader scrolls.
+  (function() {
+    const tocLinks = Array.from(document.querySelectorAll('aside nav a'));
+    const idToLink = new Map(
+      tocLinks
+        .map(a => [a.getAttribute('href').replace('#', ''), a])
+        .filter(([id]) => id)
+    );
+    const headings = Array.from(idToLink.keys())
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    if (!('IntersectionObserver' in window) || headings.length === 0) return;
+
+    let visible = new Set();
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          visible.add(entry.target.id);
+        } else {
+          visible.delete(entry.target.id);
+        }
+      });
+
+      tocLinks.forEach(a => a.classList.remove('active'));
+
+      // Pick the first heading in document order that's currently in view,
+      // otherwise the last heading that's been scrolled past.
+      let active = null;
+      for (const h of headings) {
+        if (visible.has(h.id)) { active = h.id; break; }
+      }
+      if (!active) {
+        const scroll = window.scrollY + 120;
+        for (const h of headings) {
+          if (h.offsetTop <= scroll) active = h.id;
+        }
+      }
+      if (active && idToLink.has(active)) {
+        idToLink.get(active).classList.add('active');
+      }
+    }, { rootMargin: '-10% 0px -60% 0px', threshold: 0 });
+
+    headings.forEach(h => observer.observe(h));
+  })();
+</script>
+
+</body>
+</html>

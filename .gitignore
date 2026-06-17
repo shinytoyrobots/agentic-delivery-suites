@@ -15,5 +15,6 @@ efforts/
 # delivery-team runtime artifacts (sprint working state lives in the
 # consuming project, not in this suite repo)
 sprints/
-docs/
 .codebase-index/
+
+# Note: this repo's own published docs live in /docs and ARE tracked.
