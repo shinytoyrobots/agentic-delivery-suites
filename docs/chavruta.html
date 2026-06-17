@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The chavruta model â preserved dissent in flow</title>
+<title>The chavruta model — preserved dissent in flow</title>
 <style>
   :root {
     --bg: #fbfaf7;
@@ -459,13 +459,13 @@
     aside details summary::-webkit-details-marker { display: none; }
 
     aside details summary::after {
-      content: "â¾";
+      content: "▾";
       float: right;
       color: var(--text-faint);
     }
 
     aside details[open] summary::after {
-      content: "â´";
+      content: "▴";
     }
 
     aside .toc-title { display: none; }
@@ -526,33 +526,33 @@
 </nav>
 
 <header class="doc-header">
-  <span class="eyebrow">flow Â· preserved dissent (P6)</span>
+  <span class="eyebrow">flow · preserved dissent (P6)</span>
   <h1>The chavruta model</h1>
-  <p class="lede">Two reviewers argue opposite sides, and the disagreement is preserved as a first-class artifact that resurfaces itself when the world changes â instead of being resolved and forgotten.</p>
+  <p class="lede">Two reviewers argue opposite sides, and the disagreement is preserved as a first-class artifact that resurfaces itself when the world changes — instead of being resolved and forgotten.</p>
 </header>
 
 <h2 id="origin">Where the name comes from <a class="anchor" href="#origin" aria-label="Permalink">#</a></h2>
 
-<p><em>Chavruta</em> is the traditional Jewish method of studying texts in pairs â two people who deliberately argue opposite sides to sharpen understanding. The point isn't to win; it's that the friction surfaces things neither person would see alone. The Talmud goes a step further: it <strong>writes down the losing arguments</strong> alongside the winning ruling, because an argument that loses today might be the correct one under different circumstances tomorrow.</p>
+<p><em>Chavruta</em> is the traditional Jewish method of studying texts in pairs — two people who deliberately argue opposite sides to sharpen understanding. The point isn't to win; it's that the friction surfaces things neither person would see alone. The Talmud goes a step further: it <strong>writes down the losing arguments</strong> alongside the winning ruling, because an argument that loses today might be the correct one under different circumstances tomorrow.</p>
 
-<p><code>flow</code> borrows both ideas â the adversarial pairing, and the preservation of the minority position.</p>
+<p><code>flow</code> borrows both ideas — the adversarial pairing, and the preservation of the minority position.</p>
 
 <h2 id="problem">The problem it solves <a class="anchor" href="#problem" aria-label="Permalink">#</a></h2>
 
-<p>Normal code review drives toward <strong>agreement</strong>. Two reviewers debate, one concedes, the discussion gets resolved and forgotten. The chavruta model's claim is that <em>this throws away information</em>. When two competent reviewers genuinely disagree, the disagreement itself is a signal about a hard tradeoff in the problem â not noise to be cleaned up.</p>
+<p>Normal code review drives toward <strong>agreement</strong>. Two reviewers debate, one concedes, the discussion gets resolved and forgotten. The chavruta model's claim is that <em>this throws away information</em>. When two competent reviewers genuinely disagree, the disagreement itself is a signal about a hard tradeoff in the problem — not noise to be cleaned up.</p>
 
 <p>Human teams can't really hold onto that. The reasoning lives in a Slack thread or a sprint retro, and six months later nobody remembers it. An agent system, though, can record it precisely and watch for the moment it becomes relevant again.</p>
 
 <h2 id="how">How it works in flow <a class="anchor" href="#how" aria-label="Permalink">#</a></h2>
 
 <h3>1. A pair reviews, with opposite biases baked in</h3>
-<p>At a key checkpoint â when variants are converging, when a big spec change lands, or when something's about to ship â two reviewer agents (<code>flow-chavruta-pair</code>) look at the work. One is wired to argue for <strong>stability</strong> ("don't break things, this is risky"). The other argues for <strong>velocity</strong> ("ship it, the caution is overblown"). They aren't neutral; the opposing stance is the whole design.</p>
+<p>At a key checkpoint — when variants are converging, when a big spec change lands, or when something's about to ship — two reviewer agents (<code>flow-chavruta-pair</code>) look at the work. One is wired to argue for <strong>stability</strong> ("don't break things, this is risky"). The other argues for <strong>velocity</strong> ("ship it, the caution is overblown"). They aren't neutral; the opposing stance is the whole design.</p>
 
 <h3>2. They exit on disagreement, not consensus</h3>
-<p>This is the unusual part. The review doesn't end when they agree â it ends when they've clearly documented <em>where they disagree and why</em>. Both positions get written down as if each were correct, plus a note on which one provisionally won this round.</p>
+<p>This is the unusual part. The review doesn't end when they agree — it ends when they've clearly documented <em>where they disagree and why</em>. Both positions get written down as if each were correct, plus a note on which one provisionally won this round.</p>
 
-<h3>3. The disagreement becomes a stored object â a "dissent"</h3>
-<p>Each dissent is a small record: the minority position, the majority position, who won for now, and â critically â <strong>reactivation conditions</strong>: the specific future circumstances under which the losing side would become right.</p>
+<h3>3. The disagreement becomes a stored object — a "dissent"</h3>
+<p>Each dissent is a small record: the minority position, the majority position, who won for now, and — critically — <strong>reactivation conditions</strong>: the specific future circumstances under which the losing side would become right.</p>
 
 <div class="diagram">
 <pre class="mermaid">
@@ -574,19 +574,19 @@ flowchart LR
     class ACK,MIT,RES done;
 </pre>
 </div>
-<p class="caption">The dissent lifecycle. Status is monotonic â it only moves forward; a resolved dissent that matters again becomes a <em>new</em> dissent citing the old one.</p>
+<p class="caption">The dissent lifecycle. Status is monotonic — it only moves forward; a resolved dissent that matters again becomes a <em>new</em> dissent citing the old one.</p>
 
 <h3>4. The conditions are machine-checkable</h3>
 <p>Instead of "we'll remember this," a dissent states its triggers concretely:</p>
 <ul>
-  <li><strong>spec change</strong> â "if the spec ever mentions rate limiting, revisit this"</li>
-  <li><strong>code change</strong> â "if more than 3 places end up calling <code>withRetry</code> inline, the middleware approach we rejected was actually right"</li>
-  <li><strong>metric</strong> â "if this variant's performance score drops below 0.75, the simplicity tradeoff cost more than we thought"</li>
-  <li><strong>time</strong> â "re-check at every major version, or every 90 days anyway"</li>
+  <li><strong>spec change</strong> — "if the spec ever mentions rate limiting, revisit this"</li>
+  <li><strong>code change</strong> — "if more than 3 places end up calling <code>withRetry</code> inline, the middleware approach we rejected was actually right"</li>
+  <li><strong>metric</strong> — "if this variant's performance score drops below 0.75, the simplicity tradeoff cost more than we thought"</li>
+  <li><strong>time</strong> — "re-check at every major version, or every 90 days anyway"</li>
 </ul>
 
 <h3>5. A monitor watches, and the dissent surfaces itself</h3>
-<p>A separate watcher (<code>flow-dissent-monitor</code>) checks those conditions automatically â on every spec bump, every commit, every eval run. When one matches, the dissent flips to <strong>reactivated</strong> and resurfaces for a decision. A human or the orchestrator then either <em>acknowledges</em> it (tradeoff still fine), <em>mitigates</em> it (changes the code), or <em>resolves</em> it (it's genuinely moot now).</p>
+<p>A separate watcher (<code>flow-dissent-monitor</code>) checks those conditions automatically — on every spec bump, every commit, every eval run. When one matches, the dissent flips to <strong>reactivated</strong> and resurfaces for a decision. A human or the orchestrator then either <em>acknowledges</em> it (tradeoff still fine), <em>mitigates</em> it (changes the code), or <em>resolves</em> it (it's genuinely moot now).</p>
 
 <h2 id="dissent">The dissent record <a class="anchor" href="#dissent" aria-label="Permalink">#</a></h2>
 
@@ -601,18 +601,18 @@ flowchart LR
     <tr><td><code>reactivated</code></td><td>A condition matched; needs attention</td><td><code>flow-dissent-monitor</code></td></tr>
     <tr><td><code>acknowledged</code></td><td>Reviewed; the tradeoff still holds; no code change</td><td><code>flow-dissent</code></td></tr>
     <tr><td><code>mitigated</code></td><td>Code changed to address it; triggers shouldn't match anymore</td><td><code>flow-dissent</code></td></tr>
-    <tr><td><code>resolved</code></td><td>Formally retired â a spec change made it moot, or it was wrong</td><td><code>flow-dissent</code></td></tr>
+    <tr><td><code>resolved</code></td><td>Formally retired — a spec change made it moot, or it was wrong</td><td><code>flow-dissent</code></td></tr>
   </tbody>
 </table>
 
-<p>Only <code>flow-chavruta-pair</code> (and, for methodology concerns, <code>flow-evaluator</code>) may raise dissents. Generators never do â they implement, they don't second-guess; an ambiguous spec gets a HITL flag, not a dissent. Dissents are about <em>decisions</em>, not specifications.</p>
+<p>Only <code>flow-chavruta-pair</code> (and, for methodology concerns, <code>flow-evaluator</code>) may raise dissents. Generators never do — they implement, they don't second-guess; an ambiguous spec gets a HITL flag, not a dissent. Dissents are about <em>decisions</em>, not specifications.</p>
 
 <h2 id="properties">Key properties <a class="anchor" href="#properties" aria-label="Permalink">#</a></h2>
 
 <ul>
   <li><strong>Append-only.</strong> You never edit a past position. If the disagreement evolves, you resolve the old dissent and raise a new one that cites it. The history is part of the value.</li>
-  <li><strong>Self-surfacing.</strong> Nobody has to remember to go back and re-read anything â the relevant past argument comes <em>find you</em> when conditions change.</li>
-  <li><strong>Disagreement is preserved, not resolved.</strong> A reactivated dissent isn't a veto. It's a flag that says "the assumption behind this old decision may no longer hold â take a fresh look."</li>
+  <li><strong>Self-surfacing.</strong> Nobody has to remember to go back and re-read anything — the relevant past argument comes <em>find you</em> when conditions change.</li>
+  <li><strong>Disagreement is preserved, not resolved.</strong> A reactivated dissent isn't a veto. It's a flag that says "the assumption behind this old decision may no longer hold — take a fresh look."</li>
 </ul>
 
 <p class="traits"><strong>Guardrails:</strong> the pair has a quota (default 2 dissents per checkpoint, the most material ones) to prevent dissent inflation, and an <code>acknowledged-noisy</code> status suppresses dissents whose triggers fire too often (&gt;5 times) without resolution.</p>
@@ -635,11 +635,11 @@ flowchart LR
 </table>
 
 <blockquote>
-  <p>The chavruta pattern is the feature <strong>most likely to compound an advantage over time</strong> â but its value is invisible until the first reactivation actually fires. That delayed payoff is exactly why it has to be automated: a human team would never sustain the bookkeeping long enough to collect.</p>
+  <p>The chavruta pattern is the feature <strong>most likely to compound an advantage over time</strong> — but its value is invisible until the first reactivation actually fires. That delayed payoff is exactly why it has to be automated: a human team would never sustain the bookkeeping long enough to collect.</p>
 </blockquote>
 
 <footer class="doc-footer">
-  <p>flow Â· the chavruta model Â· companion to <a href="index.html">Using flow</a></p>
+  <p>flow · the chavruta model · companion to <a href="index.html">Using flow</a></p>
 </footer>
 
 </main>

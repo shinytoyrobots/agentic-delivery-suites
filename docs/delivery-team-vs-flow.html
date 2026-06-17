@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>delivery-team vs flow â two approaches to writing code with AI</title>
+<title>delivery-team vs flow — two approaches to writing code with AI</title>
 <style>
   :root {
     --bg: #fbfaf7;
@@ -459,13 +459,13 @@
     aside details summary::-webkit-details-marker { display: none; }
 
     aside details summary::after {
-      content: "â¾";
+      content: "▾";
       float: right;
       color: var(--text-faint);
     }
 
     aside details[open] summary::after {
-      content: "â´";
+      content: "▴";
     }
 
     aside .toc-title { display: none; }
@@ -507,9 +507,9 @@
       <ol>
         <li><a href="#two-suites">Two suites, two assumptions</a></li>
         <li><a href="#contrast">The contrast in one line</a></li>
-        <li><a href="#diagram-dt">delivery-team â AI-accelerated sprint</a></li>
-        <li><a href="#diagram-flow">flow â AI-first generate-and-converge</a></li>
-        <li><a href="#gwt">GWT â EARS layered spec</a></li>
+        <li><a href="#diagram-dt">delivery-team — AI-accelerated sprint</a></li>
+        <li><a href="#diagram-flow">flow — AI-first generate-and-converge</a></li>
+        <li><a href="#gwt">GWT → EARS layered spec</a></li>
       </ol>
     </nav>
   </details>
@@ -525,7 +525,7 @@
 </nav>
 
 <header class="doc-header">
-  <span class="eyebrow">delivery-team vs flow Â· architecture note</span>
+  <span class="eyebrow">delivery-team vs flow · architecture note</span>
   <h1>Two approaches to writing code with AI</h1>
   <p class="lede">Two skill suites to build software with AI from opposite starting assumptions: one accelerates a human sprint, the other rebuilds the pipeline around what agents are good at.</p>
 </header>
@@ -533,8 +533,8 @@
 <h2 id="two-suites">Two suites, two assumptions <a class="anchor" href="#two-suites" aria-label="Permalink">#</a></h2>
 
 <ul>
-  <li><strong><code>delivery-team</code> â AI acceleration of a traditional human sprint.</strong> A linear, gated pipeline that mirrors a traditional Notion-based sprint process. Each stage maps to a process stage; each agent maps to a job title. AI makes every seat faster, but the shape is the sprint.</li>
-  <li><strong><code>flow</code> â an AI-first approach to building.</strong> The spec is the source of truth and code is regenerated output. An orchestrator dynamically dispatches parallel generators, a multi-objective evaluator scores them on a Pareto front, and the effort <em>converges</em> rather than ending on a calendar date.</li>
+  <li><strong><code>delivery-team</code> — AI acceleration of a traditional human sprint.</strong> A linear, gated pipeline that mirrors a traditional Notion-based sprint process. Each stage maps to a process stage; each agent maps to a job title. AI makes every seat faster, but the shape is the sprint.</li>
+  <li><strong><code>flow</code> — an AI-first approach to building.</strong> The spec is the source of truth and code is regenerated output. An orchestrator dynamically dispatches parallel generators, a multi-objective evaluator scores them on a Pareto front, and the effort <em>converges</em> rather than ending on a calendar date.</li>
 </ul>
 
 <h2 id="contrast">The contrast in one line <a class="anchor" href="#contrast" aria-label="Permalink">#</a></h2>
@@ -545,7 +545,7 @@
   </thead>
   <tbody>
     <tr><td>Mental model</td><td>Human sprint, AI in every seat</td><td>Population search over a spec</td></tr>
-    <tr><td>Unit of work</td><td>Story (prose)</td><td>GWT scenario (SCN) â derived EARS (SR) â variants</td></tr>
+    <tr><td>Unit of work</td><td>Story (prose)</td><td>GWT scenario (SCN) → derived EARS (SR) → variants</td></tr>
     <tr><td>Agents</td><td>Fixed roles = job titles</td><td>Dynamic count = f(complexity)</td></tr>
     <tr><td>Progress</td><td>Linear stages + gates</td><td>Generations until convergence</td></tr>
     <tr><td>Quality</td><td>Single-threshold gate</td><td>Multi-objective Pareto front</td></tr>
@@ -555,31 +555,31 @@
   </tbody>
 </table>
 
-<h2 id="diagram-dt">delivery-team â AI-accelerated human sprint <a class="anchor" href="#diagram-dt" aria-label="Permalink">#</a></h2>
+<h2 id="diagram-dt">delivery-team — AI-accelerated human sprint <a class="anchor" href="#diagram-dt" aria-label="Permalink">#</a></h2>
 
 <p>A sequential, gated pipeline. One path forward, fixed agent roles, single-threshold gates, and a human go/no-go at every transition.</p>
 
 <div class="diagram">
 <pre class="mermaid">
 flowchart TD
-    subgraph DT["delivery-team â AI acceleration of a human sprint"]
+    subgraph DT["delivery-team — AI acceleration of a human sprint"]
         direction TB
         S1["Stage 1<br/>Problem Brief<br/>(user-researcher)"]
         S2["Stage 2<br/>Design Intent<br/>(product-designer)"]
-        S3["Stage 3<br/>Technical Spec<br/>stories + EARS ACs<br/>(architect â scrum-master)"]
-        S4["Stage 4<br/>Build â story by story<br/>(frontend / backend / middleware devs)"]
+        S3["Stage 3<br/>Technical Spec<br/>stories + EARS ACs<br/>(architect → scrum-master)"]
+        S4["Stage 4<br/>Build — story by story<br/>(frontend / backend / middleware devs)"]
         S45["Stage 4.5<br/>Release Planning<br/>(release-scorer)"]
         S5["Stage 5<br/>Cross-Functional Readiness<br/>(gtm / marketing / cx)"]
-        S6["Stage 6<br/>Release â ring 0â3<br/>(release-communicator)"]
+        S6["Stage 6<br/>Release — ring 0→3<br/>(release-communicator)"]
         S7["Stage 7<br/>T+2 Fast-Follow<br/>retro + close"]
 
-        S1 -->|"Gate 1â2"| S2
-        S2 -->|"Gate 2â3"| S3
-        S3 -->|"Gate 3â4"| S4
-        S4 -->|"Gate 4â4.5"| S45
-        S45 -->|"Gate 4.5â5"| S5
-        S5 -->|"Gate 5â6"| S6
-        S6 -->|"Gate 6â7"| S7
+        S1 -->|"Gate 1→2"| S2
+        S2 -->|"Gate 2→3"| S3
+        S3 -->|"Gate 3→4"| S4
+        S4 -->|"Gate 4→4.5"| S45
+        S45 -->|"Gate 4.5→5"| S5
+        S5 -->|"Gate 5→6"| S6
+        S6 -->|"Gate 6→7"| S7
     end
 
     H["Human HITL<br/>go / no-go at every gate"]
@@ -599,27 +599,27 @@ flowchart TD
 </div>
 <p class="caption">One path forward, gated stage-by-stage, with a human approving each transition.</p>
 
-<p class="traits"><strong>Characteristics:</strong> one path forward Â· fixed agent roles (= human job titles) Â· time-boxed sprint Â· single-threshold gates Â· code is the artifact Â· stories in prose Â· humans gate each transition.</p>
+<p class="traits"><strong>Characteristics:</strong> one path forward · fixed agent roles (= human job titles) · time-boxed sprint · single-threshold gates · code is the artifact · stories in prose · humans gate each transition.</p>
 
-<h2 id="diagram-flow">flow â AI-first generate-and-converge <a class="anchor" href="#diagram-flow" aria-label="Permalink">#</a></h2>
+<h2 id="diagram-flow">flow — AI-first generate-and-converge <a class="anchor" href="#diagram-flow" aria-label="Permalink">#</a></h2>
 
-<p>No sprint. The spec (GWT scenarios â derived EARS, executable, versioned) is the source of truth; code is regenerated output. The orchestrator dispatches <em>N</em> parallel generators where <em>N</em> is a function of complexity, not roles. Each writes only to its own variant directory (P1: intelligence parallel, writes serial). A multi-objective evaluator scores variants on a Pareto front; the effort converges rather than ending on a date.</p>
+<p>No sprint. The spec (GWT scenarios → derived EARS, executable, versioned) is the source of truth; code is regenerated output. The orchestrator dispatches <em>N</em> parallel generators where <em>N</em> is a function of complexity, not roles. Each writes only to its own variant directory (P1: intelligence parallel, writes serial). A multi-objective evaluator scores variants on a Pareto front; the effort converges rather than ending on a date.</p>
 
 <div class="diagram">
 <pre class="mermaid">
 flowchart TD
-    SPEC["spec.md + constitution.md<br/>GWT scenarios (SCN) â derived EARS (SR)<br/>executable, versioned<br/>source of truth â code is regenerated"]
-    EVAL["evals/ â multi-objective suite<br/>correctness Â· perf Â· maintainability<br/>a11y Â· security Â· cost<br/>(versioned, with adversarial holdouts)"]
+    SPEC["spec.md + constitution.md<br/>GWT scenarios (SCN) → derived EARS (SR)<br/>executable, versioned<br/>source of truth — code is regenerated"]
+    EVAL["evals/ — multi-objective suite<br/>correctness · perf · maintainability<br/>a11y · security · cost<br/>(versioned, with adversarial holdouts)"]
 
     SPEC --> ORCH
 
     ORCH["flow-orchestrator<br/>dynamic dispatch<br/>N = f(complexity), not fixed roles<br/>(P1: writes serialize here)"]
 
-    subgraph GEN["Generation N â intelligence parallel, writes serial"]
+    subgraph GEN["Generation N — intelligence parallel, writes serial"]
         direction LR
         V1["generator<br/>bias: simplicity"]
         V2["generator<br/>bias: performance"]
-        V3["generator<br/>bias: â¦"]
+        V3["generator<br/>bias: …"]
     end
 
     ORCH ==>|"spawn parallel variants<br/>each writes ONLY its own dir"| GEN
@@ -628,14 +628,14 @@ flowchart TD
     EVAL -.feeds.-> CULL
     GEN --> CULL
 
-    CHAV["flow-chavruta<br/>stability vs velocity reviewers<br/>exit at documented dissent,<br/>not consensus â dissents-active.yaml"]
+    CHAV["flow-chavruta<br/>stability vs velocity reviewers<br/>exit at documented dissent,<br/>not consensus → dissents-active.yaml"]
     CULL --> CHAV
 
     CONV{"flow-converge<br/>inter-variant similarity<br/>above threshold?"}
     CHAV --> CONV
 
-    CONV -->|"no â reheat / new generation"| ORCH
-    CONV -->|"yes â promote 1 survivor"| SHIP["flow-ship<br/>progressive rollout via flags<br/>comms derived from spec delta<br/>post-ship eval monitoring"]
+    CONV -->|"no — reheat / new generation"| ORCH
+    CONV -->|"yes — promote 1 survivor"| SHIP["flow-ship<br/>progressive rollout via flags<br/>comms derived from spec delta<br/>post-ship eval monitoring"]
 
     MON["flow-dissent-monitor<br/>watches commits for<br/>reactivation triggers"]
     SHIP -.monitored.-> MON
@@ -651,29 +651,29 @@ flowchart TD
     class CONV decision;
 </pre>
 </div>
-<p class="caption">A spec-driven generate â score â converge loop; no calendar, no fixed roles.</p>
+<p class="caption">A spec-driven generate → score → converge loop; no calendar, no fixed roles.</p>
 
-<p class="traits"><strong>Characteristics:</strong> spec â regenerated code Â· dynamic agent count (function-shaped, not role-shaped) Â· parallel reads/generation, serialized writes Â· multi-objective Pareto evaluation (no single gate) Â· continuous flow to convergence (no time box) Â· preserved dissent with reactivation, not forced consensus.</p>
+<p class="traits"><strong>Characteristics:</strong> spec → regenerated code · dynamic agent count (function-shaped, not role-shaped) · parallel reads/generation, serialized writes · multi-objective Pareto evaluation (no single gate) · continuous flow to convergence (no time box) · preserved dissent with reactivation, not forced consensus.</p>
 
-<h2 id="gwt">GWT â EARS layered spec <a class="anchor" href="#gwt" aria-label="Permalink">#</a></h2>
+<h2 id="gwt">GWT → EARS layered spec <a class="anchor" href="#gwt" aria-label="Permalink">#</a></h2>
 
 <blockquote>
-  <p><strong>Status: implemented &amp; merged</strong>. <code>flow</code>'s entry unit of work is a <strong>Given/When/Then behavioral scenario</strong> (<code>SCN-{NNN}</code>) that derives the EARS requirements (<code>SR-{NNN}</code>) â so the spec is <em>user/product-focused first</em> rather than engineering-spec-first. See <code>flow/context/flow-spec-protocol.md</code> and <code>flow/context/flow-philosophy.md</code> (P3).</p>
+  <p><strong>Status: implemented &amp; merged</strong>. <code>flow</code>'s entry unit of work is a <strong>Given/When/Then behavioral scenario</strong> (<code>SCN-{NNN}</code>) that derives the EARS requirements (<code>SR-{NNN}</code>) — so the spec is <em>user/product-focused first</em> rather than engineering-spec-first. See <code>flow/context/flow-spec-protocol.md</code> and <code>flow/context/flow-philosophy.md</code> (P3).</p>
 </blockquote>
 
-<p>Previously <code>flow-spec-writer</code> converted natural language straight to EARS (<code>The {system} shallâ¦</code>), a <em>system-centric</em> grammar. Leading with GWT keeps observable user behavior primary and defers system decomposition. It also pays off twice: a GWT scenario is already a graded example, so the scenarios double as <code>flow</code>'s eval datasets (P4).</p>
+<p>Previously <code>flow-spec-writer</code> converted natural language straight to EARS (<code>The {system} shall…</code>), a <em>system-centric</em> grammar. Leading with GWT keeps observable user behavior primary and defers system decomposition. It also pays off twice: a GWT scenario is already a graded example, so the scenarios double as <code>flow</code>'s eval datasets (P4).</p>
 
-<h3>The layered spec â scenarios first, requirements derived</h3>
+<h3>The layered spec — scenarios first, requirements derived</h3>
 
 <ol>
   <li><strong>Behavioral layer (primary): GWT scenarios.</strong> <code>Given &lt;context&gt;, When &lt;event&gt;, Then &lt;observable outcome&gt;.</code> Authored from the actor's perspective. This is what the human reviews and what <code>flow-narrator</code> derives comms from.</li>
-  <li><strong>Normative layer (derived): EARS requirements.</strong> Each scenario expands into the <code>SR-{NNN}</code> requirements that must hold for it to pass. EARS stays load-bearing and parseable â it just sits <em>downstream</em> of behavior.</li>
+  <li><strong>Normative layer (derived): EARS requirements.</strong> Each scenario expands into the <code>SR-{NNN}</code> requirements that must hold for it to pass. EARS stays load-bearing and parseable — it just sits <em>downstream</em> of behavior.</li>
   <li><strong>Conformance layer: graders + datasets.</strong> GWT scenarios seed <code>evals/datasets/</code> directly; EARS requirements still map to graders via <code>evals/harness.yaml</code>.</li>
 </ol>
 
-<p><strong>Why keep EARS, not go pure GWT.</strong> The very dimensions on <code>flow</code>'s Pareto front â security, perf, cost â are often <em>not</em> user-observable events, so they don't fit <code>Given/When/Then</code> cleanly. EARS's ubiquitous/state-driven forms cover the ambient requirements GWT can't. Use quality-attribute scenarios for the few non-functional cases that do warrant a scenario, and let EARS carry the rest.</p>
+<p><strong>Why keep EARS, not go pure GWT.</strong> The very dimensions on <code>flow</code>'s Pareto front — security, perf, cost — are often <em>not</em> user-observable events, so they don't fit <code>Given/When/Then</code> cleanly. EARS's ubiquitous/state-driven forms cover the ambient requirements GWT can't. Use quality-attribute scenarios for the few non-functional cases that do warrant a scenario, and let EARS carry the rest.</p>
 
-<p><strong>Traceability:</strong> <code>SCN-{NNN}</code> (scenario) â <code>SR-{NNN}</code> (requirement) â grader + dataset. This preserves the existing conformance-mapping discipline while adding a product-first front door.</p>
+<p><strong>Traceability:</strong> <code>SCN-{NNN}</code> (scenario) → <code>SR-{NNN}</code> (requirement) → grader + dataset. This preserves the existing conformance-mapping discipline while adding a product-first front door.</p>
 
 <p><strong>Implemented across 12 files:</strong> the spec protocol and P3 philosophy (behavioral layer + <code>SCN</code>/<code>SR</code> model), <code>flow-spec-writer</code> and the <code>/flow-spec</code> command (scenario-first authoring, <code>--requirement</code> fast-path for non-functional SRs), the eval protocol and <code>/flow-eval</code> (scenarios seed correctness datasets), <code>flow-generator</code> / <code>/flow-generate</code> (variants implement SCN + SR), <code>flow-orchestrator</code>, <code>flow-narrator</code> (comms led by SCN), <code>/flow-init</code> (scenario-first initial spec), and the README + USAGE docs.</p>
 
