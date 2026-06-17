@@ -1,6 +1,6 @@
 # Agentic Delivery Suites
 
-Two experimental [Claude Code](https://claude.com/claude-code) skill suites for building software with AI agents — built from opposite starting assumptions, designed for head-to-head comparison.
+Most tools for building software with AI keep the process we already have — the Scrum sprint, with its stories, gates, and fixed roles — and accelerate it. These two [Claude Code](https://claude.com/claude-code) skill suites take opposite answers to a sharper question: once the people in the loop are agents, is the sprint worth keeping at all?
 
 | Suite | Premise | In one line |
 |-------|---------|-------------|
@@ -35,7 +35,7 @@ install.sh            # installs the suites into ~/.claude/
 Requires [Claude Code](https://claude.com/claude-code).
 
 ```bash
-git clone https://github.com/your-org/agentic-delivery-suites.git
+git clone https://github.com/shinytoyrobots/agentic-delivery-suites.git
 cd agentic-delivery-suites
 ./install.sh            # symlinks the suites into ~/.claude/ (edits propagate live)
 ```
