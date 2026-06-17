@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Editor / OS cruft
+*.swp
+*~
+.idea/
+.vscode/
+
+# flow runtime state (per the flow state model: spec/, evals/, and
+# dissents-active.yaml are version-controlled; runtime efforts are not)
+efforts/
+**/generations/
+
+# delivery-team runtime artifacts (sprint working state lives in the
+# consuming project, not in this suite repo)
+sprints/
+docs/
+.codebase-index/
