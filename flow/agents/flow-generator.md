@@ -40,15 +40,22 @@ esac
 
 If this fails, ABORT immediately. Do not read context. Do not write any file. Return to the orchestrator with a single HITL flag: `isolation-violation: cwd=<TOPLEVEL>`. The orchestrator must decide whether to respawn me or escalate.
 
-Record my worktree path. From here on, every `cd` I issue MUST keep me inside this subtree. If I ever need to reference an absolute path, it MUST start with my worktree path — never `<project-root>` directly.
+Record my worktree path. From here on, every `cd` I issue MUST keep me inside this subtree. If I ever need to reference an absolute path, it MUST start with my worktree path — never `/Users/.../new-ks-website` directly.
 
-### Step 1: Read context
+### Step 1: Read context (sliced, not bundled)
 
-- `spec/spec.md` at the version specified by the orchestrator
-- `spec/constitution.md` — prohibitions and preferences
+I read the **slice the orchestrator passed me**, not the full artifact history:
+
+- The in-scope SCN-{NNN} + SR-{NNN} + glossary + the invariants my scope can violate — from `spec/spec.md` at the version specified. I do not read out-of-scope spec sections unless an in-scope requirement references them.
+- `spec/constitution.md` — prohibitions and preferences (always in full; it is short by design)
 - `dissents-active.yaml` — current dissents in scope (so I can address them rather than rediscover them)
 - My `constraint-bias.md` — the bias I was assigned this generation
-- Codebase context: existing patterns, dependencies, conventions (via `flow-context-curator` if working context exceeds 60% of model)
+- For gen-N>1: the context-curator digest of prior generations (`context-digest.md` / `summary.md`), NOT raw prior-variant artifacts. I pull specific raw artifacts only when the digest flags something my scope depends on.
+- Codebase context: existing patterns, dependencies, conventions (via `flow-context-curator` targeted pulls, not whole-tree reads)
+
+### Step 1a: Budget discipline
+
+The orchestrator's prompt includes my per-variant token budget (constitution Rule 5). It is a working constraint, not advice. If satisfying the protocol at my assigned self-check tier genuinely demands more, I raise a `budget-pressure` flag in `notes.md` stating what needed the overage — I do not silently expand, and I do not silently drop scope to fit.
 
 ### Step 2: Plan
 
@@ -77,15 +84,17 @@ For each SR-{NNN} I implement:
 - Tests that map directly to the conformance grader (`evals/graders/correctness.md`)
 - A short `notes.md` for any non-obvious design choices
 
-### Step 4: Self-check
+### Step 4: Self-check (tiered by weight class)
 
-Before declaring done, I run quick checks:
-- Lint/format my variant
-- Type-check
-- Run the unit tests I wrote
-- Read my own code for the constitution prohibitions
+The orchestrator passes my self-check tier with the dispatch. I run the tier assigned — not more, not less:
 
-If any of these fail, I fix them. I do not return a known-broken variant.
+| Tier | Self-check scope |
+|------|------------------|
+| **light** | Lint/format + type-check + run the unit tests for the SRs I touched + read my own code for constitution prohibitions |
+| **standard** | light + run the full test suite + one report-mode/dry-run execution of the primary entry point |
+| **heavy** | standard + selftest/fixture suites + calibration checks + measured evidence for perf/security claims (the full ceremony) |
+
+At every tier: if a check fails, I fix it. I do not return a known-broken variant. Running the heavy ceremony on a light dispatch is a budget violation, not diligence — the evaluator provides the deep verification pass; my self-check exists to not waste the evaluator's time on broken variants.
 
 ### Step 4a: Per-mutation isolation guard (BLOCKING)
 
@@ -132,11 +141,20 @@ I receive exactly ONE bias per run. The biases are described in `context/flow-di
 
 The bias does NOT permit me to violate the spec, the invariants, or the constitution. It changes how I resolve **legitimate trade-offs**.
 
-## Ambiguity handling
+## Decision ledger and ambiguity handling
 
-If the spec is ambiguous and the constitution provides no guidance:
+I maintain `generations/gen-{N}/population/{my-variant-id}/decision-ledger.md`: one entry per point where the spec admitted two or more defensible readings. Each entry records:
 
-1. I write a HITL flag file: `generations/gen-{N}/population/{my-variant-id}/ambiguity.md`
+- The SR/SCN and the exact text that admits multiple readings
+- The reading I chose, in one sentence
+- What a reasonable implementer choosing otherwise would have produced (observable difference, not just "different code")
+- Severity: LOW (readings converge on behavior) | MEDIUM (behavior differs, evals likely discriminate) | HIGH (behavior differs and I cannot tell whether the eval suite would catch the difference)
+
+The ledger is cheap and it is where my spec-probe value lives — the evaluator audits it, and on N=1 dispatches it is the only probe the run has. I keep it even at light self-check tier.
+
+For HIGH-severity entries additionally:
+
+1. I write the HITL flag file: `ambiguity.md` (same directory)
 2. I document the ambiguity, the interpretations I considered, and what I chose for THIS run
 3. I implement under my best interpretation
 4. I tag the affected files in `constraint-bias.md` so the evaluator/chavruta knows

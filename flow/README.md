@@ -2,11 +2,13 @@
 
 An AI-first software delivery suite. **Alternative** to `delivery-team`, designed for head-to-head A/B comparison.
 
+**In plain English**: write a precise spec, generate several competing implementations at once, score them from multiple angles, keep the ones nothing else beats, repeat until the population settles. Costs real tokens (roughly 150k–400k per implementation, tiered by the effort's weight class — see `context/flow-dispatch-rules.md`); skip it for vague or trivially simple work. The practitioner's guide is `USAGE.md`; operator-facing output across the suite follows `context/flow-operator-voice.md`.
+
 Where `delivery-team` accelerates human Scrum workflows with AI, `flow` is AI-first in philosophy — the pipeline itself is rethought around what LLM agents are uniquely good at and bad at.
 
 ## Why this exists
 
-A synthesis of the 2024–2026 compound-AI research literature (sources in the "Research provenance" table below) identified six load-bearing AI-first principles that the `delivery-team` suite either violates or doesn't exploit:
+Research synthesis (`~/Documents/knowledge-vault/Notes/Reference/Deep-Research/2026-05-13-ai-first-delivery-suite/research-output.md`) identified six load-bearing AI-first principles that the current `delivery-team` suite either violates or doesn't exploit:
 
 1. **Intelligence parallel, writes serial** — Cognition AI pivot. Parallel writes accumulate conflicting implicit decisions.
 2. **Dynamic dispatch over fixed roles** — MASS paper (Stanford, 2025): topology + prompt optimization beats role-play by 78.8%.
@@ -29,6 +31,19 @@ A synthesis of the 2024–2026 compound-AI research literature (sources in the "
 | HITL pattern | Pause + resume + 4 calibration levels | Preference articulator + comprehension auditor + reactivation watcher |
 | WIP control | Implicit; sprint-bound | Market-maker spread (admission cost) |
 | Exploration/exploitation | Implicit; human-managed | Temperature parameter with reheating triggers |
+| Cost control | None (per-agent, ad hoc) | Weight class sets the dispatch envelope; budget guardrails enforce it |
+
+## Weight classes and cost control
+
+Every effort is assigned a **weight class** — light, standard, or heavy — at init. The class sets the dispatch envelope: population width, model tier per generator, evaluator depth, self-check depth, and token budgets. It is a default, not a cage — amendable via the constitution. Light class keeps a real population (three cheap-tier variants) because independent spec readings are the population's probe value; the cost cut comes from model tier and protocol depth, not width.
+
+Three spec probes harden generation regardless of class:
+
+- **Interpretation panel** — a cheap pre-generation pass where readers summarize the spec independently; divergent readings surface ambiguity before any variant is built (recommended for gen-1).
+- **Decision ledger** — every variant records severity-tagged decision points where the spec admitted two readings; culls audit the ledgers, and HIGH-severity entries escalate to HITL.
+- **Light path** — an escalation backstop for light-class efforts when the population signals the class was set too low.
+
+Spend is tracked per generation in `flow-state.yaml` (estimate at admission, observed after), with mandatory budget guardrails at dispatch. See `context/flow-dispatch-rules.md` for the full envelope, tier tables, and rules.
 
 ## Skills
 
@@ -100,8 +115,9 @@ See `context/flow-state-model.md` for the full schema.
 | `context/flow-state-model.md` | flow-state.yaml schema + directory layout |
 | `context/flow-spec-protocol.md` | EARS authoring, spec evolution, conformance tests |
 | `context/flow-eval-protocol.md` | Eval suite structure, multi-objective Pareto, metastable detection |
-| `context/flow-dispatch-rules.md` | Dynamic complexity-based dispatch (1 / 2-4 / 10+) |
+| `context/flow-dispatch-rules.md` | Weight classes, dispatch envelopes, per-bias model tiers, budget guardrails, light path, interpretation panel, decision ledger |
 | `context/flow-dissent-protocol.md` | Dissent object schema, reactivation conditions, monitor behavior |
+| `context/flow-operator-voice.md` | Operator register: plain-English closing block, per-use jargon glossing |
 
 ## Design principles
 
@@ -122,14 +138,14 @@ See `context/flow-state-model.md` for the full schema.
 
 ## Testing this suite
 
-An A/B harness for comparing the two suites. Six metrics, defined before either run:
+See `research-output.md` §6 for the A/B harness. Six metrics, defined before either run:
 
 - Wall-clock time to first shippable variant
 - Total token spend
 - Human review burden (minutes)
 - Eval-front coverage (objective dimensions passing thresholds)
 - Defect rate at +14 days post-merge
-- Comprehension cost (a maintainer + one other reviewer self-report at +7 days)
+- Comprehension cost (Robin + one other reviewer self-report at +7 days)
 
 `flow` wins if it improves ≥4 of 6 metrics by ≥20% AND no metric regresses by more than 10%.
 

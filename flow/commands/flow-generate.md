@@ -1,6 +1,6 @@
 ---
 description: Spawn a generation of N implementation variants. Orchestrator dispatches generators in parallel with constraint biases; each variant writes only to its own directory.
-argument-hint: '[scope SR-IDs or "all"] [--hotfix] [--N <count>]'
+argument-hint: '[scope SR-IDs or "all"] [--hotfix] [--N <count>] [--no-panel]'
 model: opus
 allowed-tools:
   - Read
@@ -14,7 +14,7 @@ capability-class: build
 tier: II
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-dispatch-rules, flow-spec-protocol, flow-philosophy, vault-access]
+  requires-context: [flow-state-model, flow-dispatch-rules, flow-spec-protocol, flow-philosophy, flow-operator-voice, vault-access]
   upstream-skills: [flow-spec, flow-eval]
   downstream-skills: [flow-cull]
   compatible-agents: [flow-orchestrator, flow-generator, flow-context-curator]
@@ -36,6 +36,7 @@ Read context files:
 - `~/.claude/commands/context/flow-dispatch-rules.md`
 - `~/.claude/commands/context/flow-spec-protocol.md`
 - `~/.claude/commands/context/flow-philosophy.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -63,6 +64,10 @@ Produce a generation: N implementation variants of the spec, biased by different
 - WIP spread < 0.6? If not, halt and surface saturation HITL.
 - Current generation directory exists? Increment to gen-{N+1}.
 
+### Step 2b: Interpretation panel (recommended for gen-1)
+
+For gen-1 (or any generation after a major spec change), offer the interpretation panel before dispatch unless the operator declines or `--no-panel` is passed: 3–5 cheap-tier readers independently commit to readings of the in-scope slice (`flow-dispatch-rules.md` §Interpretation panel; ~5–8k tokens each). Divergent readings are located spec ambiguity — surface them for `/flow-spec` amendment before spawning generators at ~400k per variant. Convergent readings: proceed, noting panel-clean in the dispatch log.
+
 ### Step 3: Dispatch decision
 
 Launch `~/.claude/commands/agents/flow-orchestrator.md` subagent (model: opus) with:
@@ -73,8 +78,11 @@ Launch `~/.claude/commands/agents/flow-orchestrator.md` subagent (model: opus) w
 Orchestrator returns:
 - N (number of generators)
 - Biases per generator
+- **Model tier per generator** (per-bias tier table in `flow-dispatch-rules.md` §Per-bias model tier; fable only if the constitution opts in)
+- Per-variant token budget (from constitution — Rule 5)
 - Evaluator depth (will be used by `flow-cull`)
 - Chavruta decision (deferred to convergence checkpoint by default)
+- Spend estimate for the generation (written to `flow-state.yaml.spend`)
 - Rationale (logged to phase-log)
 
 ### Step 4: Create generation directory
@@ -92,15 +100,17 @@ For each (bias, index) pair from the orchestrator's dispatch:
 
 1. Create `generations/gen-{N+1}/population/var-{index}/`
 2. Write `constraint-bias.md` declaring the bias and any orchestrator notes
-3. Launch `~/.claude/commands/agents/flow-generator.md` subagent (model: opus, one per variant in parallel, with `isolation: "worktree"`) with:
+3. Launch `~/.claude/commands/agents/flow-generator.md` subagent (**model: per the orchestrator's tier assignment for this bias** — do NOT hard-code opus; one per variant in parallel, with `isolation: "worktree"`) with:
    - Spec version to target
-   - All in-scope SCN-{NNN} (scenarios) and SR-{NNN} (requirements)
+   - **The spec slice, not the bundle**: in-scope SCN-{NNN} + SR-{NNN} + glossary + the invariants this scope can violate. For gen-N>1, the context-curator digest of prior generations is the default read; raw artifacts on demand only.
    - Constraint bias
+   - **Weight class + self-check tier** (light | standard | heavy — see `flow-generator.md` §Self-check tiers)
+   - **Per-variant token budget** (verbatim): "Stay within ~{X}k tokens for this run. If the protocol genuinely demands more, raise a `budget-pressure` flag in notes.md rather than silently expanding."
    - Active dissents to address
-   - Variant directory path — **MUST be relative** (e.g. `efforts/{effort}/generations/gen-{N+1}/population/var-{index}/`). Never pass an absolute path that contains `<project-root>` — it will resolve to the main tree regardless of the agent's worktree cwd and is the primary mechanism behind the gen-3/var-3 + gen-5/var-2 isolation leaks.
+   - Variant directory path — **MUST be relative** (e.g. `efforts/{effort}/generations/gen-{N+1}/population/var-{index}/`). Never pass an absolute path that contains `/Users/.../new-ks-website` — it will resolve to the main tree regardless of the agent's worktree cwd and is the primary mechanism behind the gen-3/var-3 + gen-5/var-2 isolation leaks.
    - **Explicit isolation contract** (copy verbatim into each generator's prompt):
      > Before any other action, run `TOPLEVEL=$(git rev-parse --show-toplevel)` and verify it starts with `*/.claude/worktrees/agent-`. If not, ABORT and return `isolation-violation` HITL flag. Re-verify before every git mutation (`git switch`, `git checkout`, `git branch`, `git add`, `git commit`). All your work happens inside this worktree. If a pre-commit hook fails because `node_modules` is missing, run `pnpm install` in the worktree — do NOT fall back to the main tree.
-   - **Explicit instruction**: write ONLY to variant directory metadata + your worktree's project tree; do not touch `<project-root>` at any absolute path.
+   - **Explicit instruction**: write ONLY to variant directory metadata + your worktree's project tree; do not touch `/Users/shinytoyrobots/Development/work/new-ks-website` at any absolute path.
 4. Generators run in parallel (multiple Agent calls in one message).
 
 ### Step 6: Wait for completion
@@ -134,7 +144,8 @@ Write to `flow-state.yaml`:
 - `current-generation`: N+1
 - `wip-spread`: recalculated based on completed work
 - `dispatch.generators-per-gen-current`: actual N
-- `phase-log`: gen-{N+1} spawn record + completion record
+- `spend.last-generation.observed` + `precision` tag (Rule 5 actuals: `variant-count-x-tier-weight` as the floor; upgrade to `operator-cost` if the operator supplies real figures). Count refused/stranded/failed variants — they consumed tokens.
+- `phase-log`: gen-{N+1} spawn record + completion record (completion record includes observed spend and any `budget-pressure` flags raised)
 
 ### Step 9: Report
 
@@ -151,6 +162,7 @@ Bypasses population search:
 
 - N=1, bias=security
 - Evaluator depth=adversarial (orchestrator sets in cull)
+- **Decision ledger mandatory + ledger audit in cull** (`flow-dispatch-rules.md` §Decision ledger) — with one variant there is no population to disagree, so the ledger plus its audit is the only spec probe this path gets
 - No chavruta
 - Spec version increment is patch only
 - HITL preference-articulator (constitution may require)
@@ -171,7 +183,8 @@ Used for critical security or production-down issues where the cost of the popul
 | `efforts/{effort}/generations/gen-{N+1}/population/var-{i}/implementation/` | Variant code (by generator) |
 | `efforts/{effort}/generations/gen-{N+1}/population/var-{i}/constraint-bias.md` | Bias declaration |
 | `efforts/{effort}/generations/gen-{N+1}/population/var-{i}/notes.md` | Generator notes (if any) |
-| `efforts/{effort}/generations/gen-{N+1}/population/var-{i}/ambiguity.md` | If ambiguity flagged |
+| `efforts/{effort}/generations/gen-{N+1}/population/var-{i}/decision-ledger.md` | Severity-tagged two-reading decision points (every variant) |
+| `efforts/{effort}/generations/gen-{N+1}/population/var-{i}/ambiguity.md` | If ambiguity flagged (HITL escalation for HIGH ledger entries) |
 | `efforts/{effort}/flow-state.yaml` | Updated state + phase-log |
 
 ## HITL surface
@@ -215,3 +228,7 @@ Same as above but generators only implement SR-019 and SR-020. Prior SRs' implem
 ```
 
 N=1; security bias; HITL approval required; targets only SR-099 (a critical-path requirement).
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: the block reports variants delivered, budget pressure (any generator flagging that it needed more than its token budget), and the judgment calls the spec left open (decision-ledger entries) that need answers — each pending answer as its own decision item, never a stacked count.

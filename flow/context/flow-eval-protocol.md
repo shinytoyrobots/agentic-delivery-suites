@@ -126,6 +126,12 @@ Metastable candidates are surfaced in `flow-state.yaml`. `flow-ship` may release
 
 ---
 
+## Decision-ledger audit
+
+Generators record every two-reading decision point in a severity-tagged `decision-ledger.md` (see `flow-dispatch-rules.md` §Decision ledger). The evaluator audits the ledger at deep/adversarial depth, and unconditionally for N=1 dispatches. The audit question per entry: *would the current suite detect the difference between the readings?* A **no** is a `suite-gap` finding — the suite is blind to a fork that produced observable behavioral difference — and is treated as flow-eval backlog input, same as a cull finding. This converts fork detection from empirical (population disagreement) to analytical where the population is thin or absent.
+
+---
+
 ## When the eval suite changes
 
 Evals evolve. Three permitted patterns:

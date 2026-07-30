@@ -1,5 +1,15 @@
 # Using flow
 
+## Quickstart, in plain English
+
+`flow` builds software by writing a precise spec, then generating several competing implementations of it at once, scoring them against automated tests from multiple angles, and keeping only the ones nothing else beats — repeating until the population settles on a winner. You review the spec and make the judgment calls; the suite does the building and scoring. It shines when requirements can be pinned down precisely and quality has real trade-offs worth exploring.
+
+**What it costs**: each generated implementation runs roughly 150k–400k tokens depending on the effort's cost/rigor tier (weight class), so one generation of a heavyweight effort can run into millions of tokens. `flow-init` sets the tier and budgets with you up front.
+
+**When not to use it**: work too vague to spec precisely, single-file fixes, or anything where one obvious implementation exists — a plain Claude Code session or the `delivery-team` suite is cheaper and faster there. The suite's own hotfix path (`/flow-generate --hotfix`) covers emergencies.
+
+---
+
 Most AI delivery tools graft language models onto existing Scrum workflows. `flow` doesn't.
 
 Scrum exists because humans get tired, change their minds, and need ceremony to coordinate. Agents have none of those problems. The rituals that compensate for them — sprints, stories, retros, readiness gates, fixed roles — aren't features. They're scar tissue from a constraint that no longer applies.
@@ -108,7 +118,7 @@ The lifecycle is six phases. Skills are user-invoked slash commands; agents are 
 Before running any flow skill:
 
 - Claude Code installed and able to read `~/.claude/commands/`
-- The `flow` suite linked into `~/.claude/commands/` (symlinked from this repo per the repository convention in the root `CLAUDE.md`)
+- The `flow` suite linked into `~/.claude/commands/` (symlinked from this repo per the monorepo convention in the root `CLAUDE.md`)
 - A working directory — greenfield or an existing codebase with git initialized
 - Working familiarity with EARS notation (Easy Approach to Requirements Syntax) — see `context/flow-spec-protocol.md` if unfamiliar
 - A purpose paragraph for the effort: what problem you're solving and why
@@ -243,4 +253,4 @@ Two limits worth naming up front. Fourteen days is too short to measure long-ter
 - `context/flow-eval-protocol.md` — eval suite structure, multi-objective Pareto, metastable detection
 - `context/flow-dispatch-rules.md` — dynamic complexity-based dispatch and the canonical generator-count rules
 - `context/flow-dissent-protocol.md` — dissent object schema, reactivation conditions, monitor behavior
-- Research provenance: the sources behind the six principles are listed in the "Research provenance" table in `README.md`
+- Deep research source: `~/Documents/knowledge-vault/Notes/Reference/Deep-Research/2026-05-13-ai-first-delivery-suite/research-output.md`

@@ -76,6 +76,15 @@ After scoring, I evaluate metastable-candidate status using the protocol in `con
 
 I flag `metastable-assessment.is-metastable-candidate: true|false` with rationale.
 
+### Step 5a: Audit the decision ledger
+
+At deep/adversarial depth — and ALWAYS when the variant is an N=1 dispatch (hotfix) — I read the variant's `decision-ledger.md` and answer, per entry: **would the current eval suite detect the difference between the two readings?**
+
+- *Yes* → note which task/grader discriminates; done.
+- *No* → record a `suite-gap` finding in the eval result (entry, both readings, why the suite is blind to the difference). Suite gaps route to `/flow-eval` exactly as cull findings do.
+
+A missing ledger on an N=1 dispatch is itself a finding — that path has no population probe, so the ledger is not optional there.
+
 ### Step 6: Detect Goodhart signals
 
 I compare this variant's scores against the prior generation's best variant on each dimension. If any dimension climbs >30% in one generation, I flag `goodhart-signal: detected` in the eval result with the dimension(s) and the climb rate.

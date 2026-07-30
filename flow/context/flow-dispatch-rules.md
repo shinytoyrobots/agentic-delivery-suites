@@ -21,14 +21,15 @@ Right answer: orchestrator reads complexity signals, looks up the dispatch table
 
 `flow-orchestrator` reads these signals before spawning anything:
 
-1. **Spec scope** — how many SR-{NNN} does this request touch?
-2. **Spec novelty** — are the SRs additive, or do they conflict with existing patterns?
-3. **Generation history** — is this gen-1 (cold start) or gen-N (refinement)?
-4. **Pareto-front state** — is the front advancing or plateaued?
-5. **Dissent state** — are there active dissents in scope?
-6. **WIP spread** — current admission cost from `flow-state.yaml`
-7. **Temperature** — exploration vs exploitation (annealing state)
-8. **Constitution overrides** — explicit dispatch overrides from the effort's constitution
+1. **Weight class** — the effort's `weight-class` from `spec/constitution.md` (light | standard | heavy). Read FIRST: it sets the dispatch envelope (row-set, N ceiling, tier policy, depth defaults) that every other signal operates within.
+2. **In-scope delta** — how many SR-{NNN} are **new, changed, or explicitly targeted in this generation** — NOT the spec's total size. A refinement generation touching 4 SRs of a 74-SR spec is a 4-SR request. Dispatching on total spec size creates a feedback loop: flow-spec and flow-eval harden the spec, the spec grows, and dispatch width silently inflates with it. The delta signal severs that loop.
+3. **Spec novelty** — are the in-scope SRs additive, or do they conflict with existing patterns?
+4. **Generation history** — is this gen-1 (cold start) or gen-N (refinement)?
+5. **Pareto-front state** — is the front advancing or plateaued?
+6. **Dissent state** — are there active dissents in scope?
+7. **WIP spread** — current admission cost from `flow-state.yaml`
+8. **Temperature** — exploration vs exploitation (annealing state)
+9. **Constitution overrides** — explicit dispatch overrides from the effort's constitution
 
 ---
 
@@ -36,7 +37,19 @@ Right answer: orchestrator reads complexity signals, looks up the dispatch table
 
 Adapted from Anthropic's multi-agent research system explicit rules.
 
-### `flow-generate` (population size)
+### Weight class → dispatch envelope
+
+The class table is consulted first. It sets the envelope; the situation table below refines N **within standard and heavy only**. Light class uses its own row-set (plus the hotfix row, which is class-independent).
+
+| Class | gen-1 N | gen-N refinement | Evaluator depth | Chavruta | N ceiling |
+|-------|---------|------------------|-----------------|----------|-----------|
+| light | 3 (cheap tier) | 1–3 | quick; standard pre-ship | explicit trigger only (see §Light path) | 5 |
+| standard | 3–5 | 3 | standard; deep pre-ship | convergence checkpoint | 7 |
+| heavy | 5–7 | 3–7 (situation table) | situation table | situation table | 10 |
+
+Light keeps a **real population** — the cost cut comes from model tier and protocol envelope, not width. Three cheap-tier variants preserve three independent spec readings (the population's spec-probe value); a single variant cannot disagree with itself. See §Light path for the escalation backstop.
+
+### `flow-generate` (population size — standard and heavy classes)
 
 | Situation | Generators spawned | Rationale |
 |-----------|--------------------|-----------|
@@ -46,9 +59,9 @@ Adapted from Anthropic's multi-agent research system explicit rules.
 | gen-N>1; Pareto advancing | **3** | Refinement; smaller population sufficient |
 | gen-N>1; Pareto plateaued | **5-7** | Need wider variant search to escape local optimum |
 | gen-N>1; reheat just fired | **7-10** | Maximum exploration |
-| Accessibility-bearing component | **min 7** | Constitution override (a11y dimension benefits from diversity) |
-| Performance-critical path | **min 5** + chavruta on convergence | Constitution override |
-| Hotfix / critical security | **1** | Bypass population; serialized single variant |
+| Accessibility-bearing component | **min 7 (heavy class only)** | Constitution override (a11y dimension benefits from diversity). At light/standard: guarantee one a11y-biased variant + the a11y eval dimension instead of raising N. |
+| Performance-critical path | **min 5 (heavy class only)** + chavruta on convergence | Constitution override. At light/standard: guarantee one performance-biased variant instead of raising N. |
+| Hotfix / critical security | **1** | Bypass population; serialized single variant; decision ledger + ledger audit mandatory (see §Decision ledger) |
 
 ### Constraint-bias assignment
 
@@ -67,6 +80,25 @@ When N>1 generators spawn, each gets a different constraint bias. The orchestrat
 Default rotation: `simplicity, performance, maintainability, security, convention` (5 biases for default N=5).
 
 When temperature ≥ 0.6, replace one of these with `radical`. When temperature ≤ 0.2, lock to `convention + maintainability + security`.
+
+### Per-bias model tier
+
+Dispatch assigns a model tier per (class, bias) — width is not the only adaptive dimension. Agent frontmatter carries only a default `model:`; the Agent tool's per-call model override is the mechanism, passed at spawn time. Chosen tiers are recorded in the dispatch phase-log entry.
+
+| Bias | light | standard | heavy |
+|------|-------|----------|-------|
+| convention, simplicity, reversibility | sonnet | sonnet | opus |
+| maintainability, performance | sonnet | opus | opus |
+| security, radical | — (security-bearing scope escalates the class) | opus | opus or fable (opt-in) |
+
+Evaluators follow the same principle: quick/standard depth → sonnet; deep/adversarial → opus.
+
+**Fable slots (opt-in, population-only).** The Fable pilot (`flow/fable-reassessment.md`) kept generation on opus/sonnet because a Fable refusal has no agent-layer fallback — but that caution is calibrated for single-threaded roles, where a refusal strands the whole step. A population inverts the risk: one refused variant out of N is absorbed (gen-1 var-4's outage + orchestrator recovery is the precedent), making generator slots the lowest-blast-radius Fable adoption site in the suite. Conditions:
+
+1. Constitution opt-in: `fable-permitted-biases: [...]` under Dispatch overrides. Never a silent default.
+2. A de-prescriptified generator prompt for Fable runs — the isolation contract stays verbatim (correctness property); the step-by-step implementation procedure is restated outcome-first.
+3. At most one fable slot per generation initially; the Pareto front decides whether it earns more.
+4. A refused/stranded fable variant is recorded as spend (Rule 5) and its slot noted in the dispatch log.
 
 ### `flow-evaluator` (depth)
 
@@ -124,14 +156,14 @@ If `wip-spread > 0.6`, decline new generation spawn. Surface a HITL "system is s
 ### Rule 2: Temperature-driven width
 
 ```
-generators_per_gen = base_dispatch_count + floor(temperature * 4)
+generators_per_gen = min(class_ceiling, base_dispatch_count + floor(temperature * base_dispatch_count / 2))
 ```
 
-At temperature 1.0, default N=5 becomes N=9. At temperature 0.0, default N=5 stays N=5 (do not shrink below baseline diversity).
+The bonus is proportional to the base and capped by the weight class's N ceiling. At temperature 1.0: heavy base 7 → 10 (ceiling); standard base 5 → 7 (ceiling); light base 3 → 4. At temperature 0.0, the base stands unchanged (do not shrink below baseline diversity). A flat bonus (the old `+floor(temp*4)`) is wrong at small bases — it would triple a light generation.
 
 ### Rule 3: Constitution overrides
 
-Read `spec/constitution.md`'s `Dispatch overrides` section. Apply BEFORE rule 2.
+Read `spec/constitution.md`'s `Dispatch overrides` section. Apply BEFORE rule 2. Min-N overrides are **class-scoped**: they raise width only at heavy class. At light and standard they translate to guaranteed bias *presence* (the named bias occupies one of the existing slots) plus the corresponding eval dimension — never to a wider population.
 
 ### Rule 4: Dissent reactivation overrides
 
@@ -140,18 +172,53 @@ If `dissents-reactivated > 0` in scope of this request:
 - Bump evaluator depth one level
 - Surface reactivated dissents to the generator's prompt (so it can address them)
 
-### Rule 5: Budget guardrails
+### Rule 5: Budget guardrails (MANDATORY)
 
-Constitution may specify `token-budget-per-generation`. Orchestrator estimates spend before spawning. If projected spend exceeds budget by >20%:
-- Reduce generator count to fit budget OR
-- Drop evaluator depth one level OR
-- HITL with the choice
+The constitution MUST specify both `token-budget-per-variant` and `token-budget-per-generation` (`flow-init` writes them from class defaults; a constitution missing either is an init defect — halt and surface). Observed baseline for calibration: an opus full-envelope variant costs ~400k tokens, so a 9-variant heavy generation is ~3.6M.
+
+Three enforcement points:
+
+1. **Admission (orchestrator, at dispatch).** Estimate spend before spawning: `Σ per-variant estimates by tier`. Write the estimate to `flow-state.yaml.spend.last-generation.estimate`. If projected spend exceeds `token-budget-per-generation` by >20%: reduce generator count to fit, OR drop evaluator depth one level, OR HITL with the choice.
+2. **In-agent (generator, during the run).** The per-variant budget goes **into every generator's prompt** as a working constraint: "stay within ~{X}k tokens; if the protocol genuinely demands more, raise a `budget-pressure` flag in notes.md rather than silently expanding." At ~400k per variant, admission control alone cannot work — the envelope discipline has to live where the tokens are spent.
+3. **Actuals (at generation completion).** Write `spend.last-generation.observed` with a `precision` tag naming how the figure was produced (`variant-count-x-tier-weight` floor estimate; `operator-cost` when the operator supplies `/cost` or ccusage figures; `transcript-parse` if wired). Crude is acceptable; unlabeled is not. The next dispatch reads `observed` to calibrate its estimate — without this feedback the estimates never learn, and cost invariance stays invisible in-system.
+
+Refused, stranded, or failed variants count as spend — they consumed tokens.
 
 ### Rule 6: Cognition's constraint (P1)
 
 **Generators write only to their own variant directory.** Orchestrator never spawns parallel agents writing to a shared path. This is hard-coded; not adjustable.
 
 ---
+
+## Light path
+
+Light class defaults to 3 cheap-tier generators with quick evaluator depth and no chavruta. The population is retained deliberately — it is the empirical spec probe, and the light class buys its cost reduction from tier and envelope instead of width. **Escalation is a backstop for widening further, not the primary mitigation.** The orchestrator proposes the next generation at N=5 and/or opus tier for the fork-relevant biases (HITL in preference-articulator mode; automatic in autonomous mode) when:
+
+- Variants raise ≥2 HIGH-severity decision-ledger entries, or diverge on a decision point the eval suite cannot discriminate, or
+- The evaluator finds a genuine design fork — two defensible readings of an SR producing materially different implementations, or
+- The dissent monitor reactivates a dissent in scope
+
+Security- or incident-bearing scope never dispatches light: `flow-init` auto-proposes heavy, and a light effort that grows security-bearing SRs surfaces a class-promotion HITL (never silent).
+
+## Interpretation panel (pre-generation spec probe)
+
+Part of the probe moves to where it is cheapest: **before implementation**. Available as `flow-spec --panel` or as a pre-dispatch step in `flow-generate` (recommended for every gen-1; cheap enough to be routine).
+
+Spawn 3–5 cheap-tier parallel **readers** — reads only, P1-clean, ~5–8k tokens each versus ~400k per implementation. Each receives the in-scope SCN/SR slice and, without seeing the others, commits to a structured reading:
+
+1. Its interpretation of each SR, one sentence each
+2. Every decision point where the text admits ≥2 readings, and which it would pick
+3. An implementation sketch — interfaces and control flow, no code
+
+The orchestrator diffs the readings. Divergence = located spec ambiguity, routed to `flow-spec` for amendment **before any generator runs**. Convergent readings raise confidence the spec is tight. This is the same mechanism as Anthropic's parallel-readers result cited under P1: parallel intelligence feeding one decision-maker.
+
+The panel does not replace the population — a panel predicts divergence; a population demonstrates it, including forks nobody articulates. Light class runs panel + N=3; heavy class gains the panel as a pre-filter so its expensive population argues about fewer known ambiguities.
+
+## Decision ledger
+
+Every generator maintains `decision-ledger.md` in its variant directory: one entry per point where the spec admitted ≥2 readings, with the reading chosen, what a reasonable implementer choosing otherwise would have produced, and a severity tag (LOW | MEDIUM | HIGH). This generalizes ad-hoc `ambiguity.md` documentation into a first-class, auditable artifact; `ambiguity.md` remains the HITL escalation flag for HIGH entries.
+
+The evaluator audits the ledger — mandatory at deep/adversarial depth **and for any N=1 dispatch** (hotfix): for each entry, "would the eval suite detect the difference between the two readings?" A *no* is a suite-gap finding, surfaced exactly as cull findings are. On the hotfix path this is the only spec probe there is — a single variant cannot disagree with itself, so its ledger plus the audit is the analytical substitute.
 
 ## Pre-spawn hygiene
 
@@ -241,8 +308,14 @@ The sweep produces a `pre-spawn-hygiene` block in the generation's `dispatch.md`
 ### Example 1: Cold-start small effort
 
 - Request: `/flow-generate` on a fresh effort with 4 SRs, additive
-- Signals: gen=1, SRs=4 (small), Pareto=empty, dissents=0, WIP=0, temp=0.3
+- Signals: class=standard, gen=1, in-scope delta=4 (small), Pareto=empty, dissents=0, WIP=0, temp=0.3
 - Decision: 5 generators with biases [simplicity, performance, maintainability, security, convention]. Evaluator depth: standard. Chavruta: no.
+
+### Example 1b: Light-class port
+
+- Request: `/flow-generate` on a docs-site integration port of already-working code
+- Signals: class=light, gen=1, in-scope delta=6, additive, no security-bearing scope, temp=0.4
+- Decision: 3 generators, all cheap tier (sonnet), with biases [convention, simplicity, reversibility]. Evaluator depth: quick. Chavruta: no. Rule 2 bonus floor(0.4×1.5)=0 → N stays 3. Per-variant budget in every generator prompt.
 
 ### Example 2: Plateaued mid-effort
 

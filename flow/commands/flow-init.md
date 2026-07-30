@@ -15,7 +15,7 @@ capability-class: planning-design
 tier: I
 domain: [flow]
 works-with:
-  requires-context: [flow-philosophy, flow-state-model, flow-spec-protocol, flow-eval-protocol, flow-dispatch-rules, flow-dissent-protocol, vault-access]
+  requires-context: [flow-philosophy, flow-state-model, flow-spec-protocol, flow-eval-protocol, flow-dispatch-rules, flow-dissent-protocol, flow-operator-voice, vault-access]
   upstream-skills: []
   downstream-skills: [flow-spec, flow-eval, flow-generate]
   compatible-agents: [flow-orchestrator, flow-spec-writer, flow-evaluator, flow-context-curator]
@@ -39,6 +39,7 @@ Read context files:
 - `~/.claude/commands/context/flow-eval-protocol.md`
 - `~/.claude/commands/context/flow-dispatch-rules.md`
 - `~/.claude/commands/context/flow-dissent-protocol.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -79,10 +80,17 @@ Use `AskUserQuestion` to collect:
 4. **Sponsor/customer context**: any named accounts or escalations driving this? (used by `flow-narrator`)
 5. **Hard prohibitions**: things implementations must NOT do, regardless of requirements (input to constitution.md)
 6. **Default temperature**: starting exploration level (default 0.5)
+7. **Weight class** (light | standard | heavy) — propose one from these signals, then HITL-confirm:
+   - In-scope SR count for gen-1 (the walking-skeleton scope, not the whole spec)
+   - Security- or incident-bearing scope? → **auto-propose heavy** (never propose lighter for security-bearing work)
+   - Novel architecture vs port/integration of already-working code → port leans light
+   - Blast radius: published/production-facing vs internal tooling
+   - Reversibility of a bad ship
+   The class sets dispatch width, model tier, evaluator depth, self-check depth, and token budgets (see `flow-dispatch-rules.md` §Weight class). It is a default, not a cage — amendable via `flow-spec --constitution`.
 
 ### Step 3: Author initial spec
 
-Launch `~/.claude/commands/agents/flow-spec-writer.md` subagent (model: opus) with the gathered context. Tell it to author the **behavioral scenarios first, then derive requirements**:
+Launch `~/.claude/commands/agents/flow-spec-writer.md` subagent (model: fable) with the gathered context. Tell it to author the **behavioral scenarios first, then derive requirements**:
 - If `--from-spec`: ingest the provided document; extract user journeys / stories → GWT scenarios (SCN-{NNN}); extract constraints / requirements → EARS SR-{NNN}; flag any vague NL as ambiguity that needs HITL.
 - If `--from-delivery-team`: read the prior effort's `project-kickoff.md`, `sprint-N-summary.md` if any. Extract user journeys / stories → scenarios (SCN-{NNN}); extract requirements / constraints → EARS (SR-{NNN}).
 - If neither: from the user's purpose paragraph, author GWT scenarios (SCN-{NNN}) for the core happy-path user journeys first, then decompose their acceptance criteria into EARS SR-{NNN}, then extract any non-functional constraints (perf, security, cost) as standalone SR-{NNN}. Fewer, well-formed scenarios beats many vague ones — better to have 3 sharp scenarios than 20 fuzzy ones.
@@ -97,6 +105,16 @@ The default constitution skeleton:
 
 ```markdown
 # Constitution — {effort-slug}
+
+## Weight class
+weight-class: {light | standard | heavy}   # confirmed in Step 2; see flow-dispatch-rules §Weight class
+# Rationale: {one line — which signals drove the classification}
+
+## Budgets
+token-budget-per-variant: {light ~150k | standard ~250k | heavy ~400k}
+token-budget-per-generation: {≈ per-variant × planned N: light ~500k | standard ~1.5M | heavy ~4M}
+# Both fields are REQUIRED (dispatch Rule 5). Defaults are calibrated from the observed
+# ~400k/variant opus full-envelope baseline; revise as spend-observed actuals accumulate.
 
 ## Prohibitions
 {user-supplied prohibitions}
@@ -223,11 +241,17 @@ hitl-mode: {user-supplied, default preference-articulator}
 hitl-pending: 0
 dispatch:
   orchestrator-policy: complexity-adaptive
-  generators-per-gen-default: 5
-  generators-per-gen-current: 5
-  evaluator-depth: standard
-  chavruta-on-convergence: true
+  weight-class: {from constitution}        # light | standard | heavy
+  generators-per-gen-default: {class default: light 3 | standard 5 | heavy 7}
+  generators-per-gen-current: {same as default}
+  evaluator-depth: {class default: light quick | standard standard | heavy standard}
+  chavruta-on-convergence: {class default: light false | standard/heavy true}
   chavruta-on-major-spec-change: true
+spend:
+  last-generation:
+    estimate: null                         # tokens, written by dispatch (Rule 5)
+    observed: null                         # tokens, written at generation completion
+    precision: null                        # variant-count-x-tier-weight | operator-cost | transcript-parse
 last-update: "{ISO8601 now}"
 updated-by: flow-init
 phase-log:
@@ -239,8 +263,9 @@ phase-log:
 Read everything back and verify:
 - `spec/spec.md` has at least one SR-{NNN}
 - `spec/constitution.md` exists with non-empty prohibitions
+- `spec/constitution.md` has a `weight-class` and BOTH budget fields (`token-budget-per-variant`, `token-budget-per-generation`) — these are required, not optional
 - `evals/harness.yaml` validates
-- `flow-state.yaml` validates
+- `flow-state.yaml` validates (including `dispatch.weight-class` matching the constitution)
 - `.gitignore` excludes working artifacts
 
 ### Step 9: Initial dissent check
@@ -251,6 +276,7 @@ Launch `~/.claude/commands/agents/flow-dissent-monitor.md` subagent (model: sonn
 
 Return summary:
 - Effort slug
+- Weight class + one-line rationale + the budgets it set
 - Files created (with paths)
 - SRs in spec (count + IDs)
 - Eval dimensions configured
@@ -277,6 +303,7 @@ Always preference-articulator mode for `flow-init`. The user is explicitly defin
 
 - Vague NL that can't be EARS-ified: counter-prompt
 - Missing prohibitions: confirm "no explicit prohibitions" or solicit
+- Weight class: always confirm the proposed class (with its budget implications stated in plain terms); never silently classify
 - Customization of dispatch defaults: confirm or accept
 - Existing flow-state would conflict: explicit choice to extend or rename
 
@@ -289,3 +316,7 @@ Always preference-articulator mode for `flow-init`. The user is explicitly defin
 ## Idempotency
 
 `flow-init` is **not** idempotent. Re-running on an existing effort will halt at Step 1. To re-bootstrap, the user must delete or rename the existing effort directory first.
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: confirm the effort's cost/rigor tier (weight class) and its budgets in terms the operator can veto — 'roughly N tokens per generation' — before anything else runs.

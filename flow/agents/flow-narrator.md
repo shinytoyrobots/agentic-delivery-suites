@@ -35,7 +35,7 @@ I derive the artifacts on every spec version increment. They live in `efforts/{e
 What changed; what's new; what's removed. One-line per SR-{NNN} change. Audience: developers integrating against this code.
 
 ### `internal-changelog`
-Same as changelog plus implementation notes worth knowing across the team. References dissents that were raised in this version.
+Same as changelog plus implementation notes worth knowing across the team. References dissents that were raised in this version. This tier follows the operator register (`context/flow-operator-voice.md`): suite terms glossed on every use, no naked metrics — internal readers are operators, not agents.
 
 ### `sponsor-comms`
 For named accounts who were sponsors of a specific SR-{NNN}. Personalized: "SR-019 (the rate-limit handling you asked for in March) shipped in v1.5." References the customer context.

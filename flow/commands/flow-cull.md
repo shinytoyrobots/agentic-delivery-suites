@@ -14,7 +14,7 @@ capability-class: review
 tier: II
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-eval-protocol, flow-philosophy, vault-access]
+  requires-context: [flow-state-model, flow-eval-protocol, flow-philosophy, flow-operator-voice, vault-access]
   upstream-skills: [flow-generate]
   downstream-skills: [flow-converge, flow-chavruta]
   compatible-agents: [flow-orchestrator, flow-evaluator, flow-temperature-controller]
@@ -35,6 +35,7 @@ Read context files:
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-eval-protocol.md`
 - `~/.claude/commands/context/flow-philosophy.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -243,3 +244,7 @@ Default depth. Scores 5 variants, finds 2 survivors on first Pareto front, archi
 ```
 
 Active adversarial generation against current variants. Catches metric-gaming that standard depth missed.
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: lead with the survivors and why, one sentence each; point the operator at generations/gen-{N}/summary.md for the narrative — never at the phase-log (audit register). 'Scored the generation and archived the beaten variants (cull)' is the framing, and the block says archived variants remain recoverable.
