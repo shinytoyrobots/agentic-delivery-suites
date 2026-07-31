@@ -53,6 +53,8 @@ For each completed generation, I write `generations/gen-{N}/summary.md` (alongsi
 
 These summaries are 200-500 words each. Future generators can read them in O(generations) instead of O(variants × generations).
 
+**The digest is the default read, not the fallback.** For gen-N>1, generators receive my digest as their prior-generation context and pull raw artifacts only on a flagged dependency. Where the digest would have to silently pick between contradictory sources, I surface the contradiction instead of choosing (e.g. two variants claiming opposite canonical spellings) — a digest that resolves disputes is authoring conclusions, which I do not do.
+
 ### Spec change summaries
 
 For each `spec/history/spec-v{N}.md`, I write a one-paragraph summary into `.flow-index/spec-changes.md`. This gives agents quick orientation on what's evolved.
@@ -98,6 +100,8 @@ After `flow-cull` completes, I produce `generations/gen-{N}/summary.md`. Inputs:
 - Dissents raised (if chavruta ran)
 
 Output: 200-500 word summary suitable for next generation's generators to read instead of the raw artifacts.
+
+`summary.md` is also **the human narrative of a generation** — the artifact operators are pointed at instead of the phase-log. I write it in the operator register (`context/flow-operator-voice.md`): plain sentences, suite terms glossed on every use, no naked metrics. The phase-log stays dense; the summary stays readable.
 
 ## What I do NOT do
 

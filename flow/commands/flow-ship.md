@@ -15,7 +15,7 @@ capability-class: deploy
 tier: I
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-philosophy, flow-spec-protocol, vault-access]
+  requires-context: [flow-state-model, flow-philosophy, flow-spec-protocol, flow-operator-voice, vault-access]
   upstream-skills: [flow-converge, flow-chavruta]
   downstream-skills: []
   compatible-agents: [flow-orchestrator, flow-narrator, flow-evaluator]
@@ -36,6 +36,7 @@ Read context files:
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-philosophy.md`
 - `~/.claude/commands/context/flow-spec-protocol.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -303,3 +304,7 @@ Stability is high, spec proximity is partial. HITL confirms which SRs are deferr
 ```
 
 Reverses the prior ship. Working tree restored. Rollback comms generated. Post-ship monitoring continues for forensic data.
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: report what went out, to whom, behind which flag, and the watch condition that would trigger rollback — all four, plainly.

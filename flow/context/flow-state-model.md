@@ -119,11 +119,21 @@ hitl-pending: 0                         # Count of items awaiting human input
 # Dispatch state
 dispatch:
   orchestrator-policy: complexity-adaptive  # Always; do not change
+  weight-class: standard                # light | standard | heavy — echo of constitution; constitution is authoritative
   generators-per-gen-default: 5
   generators-per-gen-current: 5         # Adjusted by orchestrator per request
   evaluator-depth: standard             # quick | standard | deep | adversarial
   chavruta-on-convergence: true         # invoke chavruta when converging
   chavruta-on-major-spec-change: true   # invoke chavruta when spec.md changes >20%
+
+# Spend (token accounting per generation — dispatch Rule 5)
+spend:
+  last-generation:
+    estimate: 1500000                   # tokens; written by orchestrator at dispatch time
+    observed: null                      # tokens; written at generation completion; approximate
+    precision: variant-count-x-tier-weight  # variant-count-x-tier-weight | operator-cost | transcript-parse
+# The precision tag keeps observed honest: it names how the figure was produced, never
+# overclaiming. Dispatch reads last-generation.observed to calibrate the next estimate.
 
 # Audit
 last-update: "2026-05-13T14:22:00Z"
@@ -259,6 +269,16 @@ Governance rules for the effort. Author-once-update-rarely. Read by every agent.
 ```markdown
 # Constitution — customer-portal-rewrite
 
+## Weight class
+weight-class: standard   # light | standard | heavy; set at flow-init, amendable via flow-spec
+# Rationale: existing architecture, moderate blast radius, no security-bearing scope.
+
+## Budgets
+token-budget-per-variant: 250000
+token-budget-per-generation: 1500000
+# REQUIRED fields (dispatch Rule 5). The per-variant budget is passed into every
+# generator's prompt as a working constraint, not just checked at admission.
+
 ## Prohibitions
 - No PII in logs.
 - No client-side state for billing operations.
@@ -276,7 +296,7 @@ Governance rules for the effort. Author-once-update-rarely. Read by every agent.
 
 ## Dispatch overrides
 - Performance-critical paths → always invoke chavruta on convergence
-- Accessibility-bearing components → minimum N=7 generators
+- Accessibility-bearing components → minimum N=7 generators (heavy class only; at light/standard this guarantees an a11y-biased variant instead — see dispatch Rule 3)
 - Token-cost dimension always present in eval Pareto
 
 ## Violation policy

@@ -15,7 +15,7 @@ capability-class: planning-design
 tier: II
 domain: [flow]
 works-with:
-  requires-context: [flow-eval-protocol, flow-state-model, flow-philosophy, vault-access]
+  requires-context: [flow-eval-protocol, flow-state-model, flow-philosophy, flow-operator-voice, vault-access]
   upstream-skills: [flow-init, flow-spec]
   downstream-skills: [flow-generate, flow-cull]
   compatible-agents: [flow-evaluator, flow-spec-writer]
@@ -36,6 +36,7 @@ Read context files:
 - `~/.claude/commands/context/flow-eval-protocol.md`
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-philosophy.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -209,3 +210,7 @@ Suite version bumps; next eval depth defaults to adversarial for performance dim
 ```
 
 Defines: grader = token-counter, datasets = harness-tracking only (no separate dataset needed for cost), threshold = budget per generation, weight = 0.10.
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: describe suite changes by what they newly catch or stop missing, not by dataset/task arithmetic; task counts are context, never the headline.

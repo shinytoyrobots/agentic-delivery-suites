@@ -11,7 +11,7 @@ capability-class: review
 tier: III
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-philosophy, vault-access]
+  requires-context: [flow-state-model, flow-philosophy, flow-operator-voice, vault-access]
   upstream-skills: []
   downstream-skills: []
   compatible-agents: []
@@ -31,21 +31,22 @@ cost:
 Read context files:
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-philosophy.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
 
-Read-only state report. Human-readable summary of the effort's current state. The single skill for "what's going on?" Replaces `dt-status` with `flow`-native vocabulary: convergence-score and Pareto front, not sprint progress and velocity.
+Read-only state report. The single skill for "what's going on?" — and the flagship operator surface of the suite. The default output is a **plain-English dashboard** written per `flow-operator-voice.md`: it answers *where this stands, what's blocking ship, and what needs you*, in that order, one screen, jargon glossed on every use, no naked metrics. The dense per-dimension view lives behind `--verbose`.
 
 ## Modes
 
 ### Default
 
-Single-screen summary. Convergence, Pareto front, active dissents, temperature, WIP, recent activity.
+One-screen plain-English dashboard: where this stands / what's blocking ship / what needs you. Every suite term carries its plain-phrase gloss; every metric carries its correct reading.
 
 ### `--verbose`
 
-Full detail. All Pareto front per-dimension scores, all active dissents with full positions, full phase-log tail, all metastable candidates with rationale.
+Full detail in suite vocabulary. All Pareto front per-dimension scores, all active dissents with full positions, full phase-log tail, all metastable candidates with rationale. This is the operator opting into the dense register.
 
 ### `--comms`
 
@@ -75,62 +76,46 @@ Emit state as JSON for programmatic consumption.
 
 ### Step 3: Format output
 
-Default format:
+Default format — plain-English dashboard per `flow-operator-voice.md`. Structure and register shown here; content derives from state:
 
 ```
-═══════════════════════════════════════════════════════════
-  flow pulse — effort: {effort-slug}
-  generation {N} | status: {status} | spec: v{spec-version}
-═══════════════════════════════════════════════════════════
+flow pulse — {effort-slug} · generation {N} · spec v{spec-version}
 
-CONVERGENCE
-  score:        0.62  ─ rising ↗
-  threshold:    0.85  (ship)
-  trajectory:   gen-1: 0.31  gen-2: 0.48  gen-3: 0.55  gen-4: 0.62
-  spec-prox:    14 of 19 SRs have passing variant on front
+WHERE THIS STANDS
+  Four generations in, and the population is settling: how settled it
+  is (convergence-score) reads 0.62 against a ship line of 0.85, and it
+  has risen every generation. 14 of the spec's 19 requirements now have
+  a passing variant among the ones still worth keeping (the Pareto
+  front). One variant — var-2 — is stable and shippable but doesn't
+  cover the full spec yet (a metastable candidate): it could go out
+  early behind a feature flag.
 
-PARETO FRONT (best variant per dimension)
-  correctness:    0.94  var-2 (simplicity)        ↗ +0.03 vs gen-3
-  performance:    0.81  var-5 (performance)       ↗ +0.03
-  maintainability:0.78  var-1 (maintainability)   →
-  accessibility:  1.00  var-2                      →
-  security:       0.92  var-2                      ↗ +0.02
-  cost:           0.55  var-3 (convention)        ↘ -0.04
+WHAT'S BLOCKING SHIP
+  1. A recorded disagreement's trigger condition fired (dissent
+     reactivation): the inline-retry-vs-middleware dispute from gen-1
+     re-armed because inline retry callsites hit 4 (its threshold was
+     3). It needs acknowledging, mitigating, or resolving.
+  2. Cost is the one dimension moving the wrong way (0.55, down 0.04) —
+     the best variants are getting more expensive to run.
 
-  Metastable candidates: 1
-    └ var-2 — stability 0.91, spec-proximity 0.62, reversibility high
+WHAT NEEDS YOU  (one decision each — answer in any order)
+  1. The reactivated disagreement above → /flow-dissent
+  2. var-2 flagged a judgment call the spec left open (decision ledger,
+     SR-019) → one interpretation ships; say which.
 
-TEMPERATURE  current: 0.40
-  trajectory: 0.50 → 0.45 → 0.45 → 0.40 (default cooling)
-  reheats: none in this effort
-  triggers armed: eval-plateau, architectural-blocker, debt-spike, dissent-cluster
+NEXT
+  /flow-dissent first — the disagreement gates the convergence
+  checkpoint; generation can continue after (/flow-generate).
 
-WIP SPREAD  current admission cost: 0.12
-  in-flight:    generators: 0   evaluators: 0   chavruta: 0
-  saturation:   1/6 (healthy)
-
-DISSENTS  active: 4   reactivated: 1   noisy: 0
-  └ dissent-2026-05-13-0001 (reactivated) — inline retry vs middleware
-    trigger: 'grep -rc withRetry' = 4 (threshold > 3)
-    awaiting: acknowledgment | mitigation | resolution
-
-HITL  mode: preference-articulator   pending: 1
-  └ var-2 — ambiguity flag on SR-019 interpretation
-
-RECENT ACTIVITY (last 5 phase-log entries)
-  2026-05-13T14:22  dispatch: gen-4 spawn / 5 generators / depth=standard
-  2026-05-13T15:30  cull: 2 survivors of 5; pareto advance on correctness, perf, sec
-  2026-05-13T15:31  temperature: 0.45 → 0.40 (default cooling)
-  2026-05-13T15:35  dissent reactivated: dissent-2026-05-13-0001
-  2026-05-13T16:00  pulse query (this command)
-
-SUGGESTED NEXT
-  • Resolve reactivated dissent (/flow-dissent acknowledge or mitigate)
-  • Continue iteration (/flow-generate) — 0.23 below ship threshold
-  • Consider metastable ship for SRs 1-14 (/flow-converge --metastable)
-
-═══════════════════════════════════════════════════════════
+Detail: --verbose for scores per dimension · gen summary at
+generations/gen-4/summary.md
 ```
+
+Rules applied above, mandatory in every rendering:
+- Suite terms carry their plain-phrase gloss on **every** use, not the first
+- No naked metrics — every number carries its correct reading
+- "WHAT NEEDS YOU" lists one decision per item, each pointing at its own prompt/command
+- Deep narrative pointer goes to `summary.md`, never to the phase-log (audit register)
 
 ### Step 4: Return
 

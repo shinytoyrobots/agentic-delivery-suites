@@ -15,7 +15,7 @@ capability-class: planning-design
 tier: III
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-dispatch-rules, flow-philosophy, vault-access]
+  requires-context: [flow-state-model, flow-dispatch-rules, flow-philosophy, flow-operator-voice, vault-access]
   upstream-skills: []
   downstream-skills: [flow-generate]
   compatible-agents: [flow-temperature-controller]
@@ -36,6 +36,7 @@ Read context files:
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-dispatch-rules.md`
 - `~/.claude/commands/context/flow-philosophy.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -174,3 +175,7 @@ Cooling trajectory (last 5 gens): 0.70, 0.55, 0.45, 0.40, 0.40
 Reheats armed: eval-plateau, architectural-blocker, debt-spike, dissent-cluster
 Constitution overrides: none
 ```
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: report the exploration level (temperature) change as what it does to the next generation — wider or narrower search — not as a bare number.

@@ -14,7 +14,7 @@ capability-class: review
 tier: III
 domain: [flow]
 works-with:
-  requires-context: [flow-dissent-protocol, flow-state-model, vault-access]
+  requires-context: [flow-dissent-protocol, flow-state-model, flow-operator-voice, vault-access]
   upstream-skills: [flow-chavruta]
   downstream-skills: [flow-spec, flow-ship]
   compatible-agents: [flow-dissent-monitor]
@@ -34,6 +34,7 @@ cost:
 Read context files:
 - `~/.claude/commands/context/flow-dissent-protocol.md`
 - `~/.claude/commands/context/flow-state-model.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -193,3 +194,7 @@ Records the mitigation. Re-checks the condition against the post-commit state. I
 ```
 
 HITL confirmation. Records resolution. Dissent will no longer be evaluated.
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: one decision per dissent — acknowledge, mitigate, or resolve — each with its consequence in one clause. Never present a count ('4 pending') without the list.

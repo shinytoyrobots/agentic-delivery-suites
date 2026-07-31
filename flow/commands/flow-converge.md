@@ -15,7 +15,7 @@ capability-class: review
 tier: II
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-eval-protocol, flow-philosophy, flow-dispatch-rules, vault-access]
+  requires-context: [flow-state-model, flow-eval-protocol, flow-philosophy, flow-dispatch-rules, flow-operator-voice, vault-access]
   upstream-skills: [flow-cull]
   downstream-skills: [flow-chavruta, flow-ship, flow-generate]
   compatible-agents: [flow-orchestrator, flow-evaluator]
@@ -37,6 +37,7 @@ Read context files:
 - `~/.claude/commands/context/flow-eval-protocol.md`
 - `~/.claude/commands/context/flow-philosophy.md`
 - `~/.claude/commands/context/flow-dispatch-rules.md`
+- `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
@@ -214,3 +215,7 @@ Convergence-score is 0.74 (below threshold) but a metastable candidate is presen
 ```
 
 HITL gate: yes/no. On approval, proceeds despite low convergence. Logged as deviation.
+
+## Operator output
+
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: state the verdict first — advance to another generation, or begin ship preparation — with the reason in behavioral terms (what settled, what did not). A 'stable and shippable but not covering the full spec (metastable)' proposal must say exactly what is and is not covered.

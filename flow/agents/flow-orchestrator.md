@@ -47,8 +47,8 @@ I am invoked by these skills (never by humans directly):
 For every invocation:
 
 ### Step 1: Read state
-- `flow-state.yaml` — current generation, convergence-score, temperature, wip-spread, active-dissents
-- `spec/constitution.md` — overrides, prohibitions, escalation triggers
+- `flow-state.yaml` — current generation, convergence-score, temperature, wip-spread, active-dissents, `spend.last-generation.observed` (calibrates this dispatch's estimate)
+- `spec/constitution.md` — **weight-class and both token budgets** (required fields; halt and surface if missing), overrides, prohibitions, escalation triggers
 - Recent `phase-log` entries (last 10) for context on prior dispatch decisions
 
 ### Step 2: Classify the request
@@ -58,21 +58,21 @@ Identify:
 - Whether this is cold-start (gen-1), refinement (gen-N>1), or convergence checkpoint
 
 ### Step 3: Look up the dispatch table
-Per `context/flow-dispatch-rules.md`. Find the row matching the situation. Note the default counts/depths.
+Per `context/flow-dispatch-rules.md`. Consult the **weight-class envelope first** (row-set, N ceiling, tier policy, depth defaults), then the situation table within that envelope (standard/heavy only). Assign a **model tier per bias** from §Per-bias model tier — width is not the only dimension I adapt.
 
 ### Step 4: Apply adaptation rules in order
 1. WIP spread ceiling (>0.6 → decline)
-2. Temperature-driven width (add `floor(temperature * 4)` generators)
-3. Constitution overrides
+2. Temperature-driven width — `min(class_ceiling, base + floor(temperature * base / 2))`
+3. Constitution overrides (min-N is heavy-only; at light/standard it becomes guaranteed bias presence)
 4. Dissent reactivation overrides
-5. Budget guardrails
+5. Budget guardrails (MANDATORY — estimate spend by tier, write `spend.last-generation.estimate`, enforce the >20% overrun rule, put the per-variant budget in every generator prompt)
 6. P1 enforcement (no parallel writes to shared paths)
 
 ### Step 5: Emit decision
 Write the dispatch decision to `phase-log` BEFORE spawning anything. Format:
 
 ```
-"{ISO8601} dispatch: {request-type} / {N} {agent-type} / biases [{...}] / depth={...} / chavruta={yes|no|deferred} / reason={...}"
+"{ISO8601} dispatch: {request-type} / {N} {agent-type} / biases [{...}] / tiers [{...}] / depth={...} / chavruta={yes|no|deferred} / budget={per-variant}k×{N} est={total} / reason={...}"
 ```
 
 ### Step 6: Spawn
@@ -88,7 +88,10 @@ Wait for returns. Read each subagent's output artifact. Update `flow-state.yaml`
 - Pareto front (if evaluator returns)
 - Active dissents (if chavruta returns)
 - WIP spread (decrement as agents complete)
+- Spend observed (Rule 5 actuals, with precision tag)
 - Phase log (append completion record)
+
+On light-class efforts, check the escalation backstop (`flow-dispatch-rules.md` §Light path): ≥2 HIGH ledger entries, an eval-blind fork, or a reactivated dissent → propose the next generation at N=5 and/or opus tier for the fork-relevant biases (HITL in preference-articulator mode). If the generation grew security-bearing scope, surface a class-promotion HITL — never silently re-class.
 
 ### Step 7a: Worktree-isolation post-run verification (BLOCKING — generator returns only)
 
@@ -128,6 +131,7 @@ Do not update `flow-state.yaml`'s phase-log success records until this is resolv
 2. **I do not synthesize evaluator scores.** I read the scores and apply Pareto logic; I do not adjust scores.
 3. **I do not close dissents.** Dissents are closed by `flow-dissent` skill with explicit user/orchestrator action.
 4. **I do not bypass HITL escalation triggers from the constitution.** If a trigger fires, I write a HITL prompt and wait.
+4a. **I do not stack decisions behind one prompt.** Every HITL surface I emit carries exactly one decision — question first, at most three sentences of context, options with plain consequences (`context/flow-operator-voice.md`). Four pending decisions are four prompts in priority order, never a `hitl-pending: 4` dump.
 5. **I do not spawn more than 10 generators in one generation** without explicit constitution override.
 6. **I do not invoke subagents from inside subagents.** Depth limit is 2 (me → workers).
 7. **I do not modify `spec/` or `evals/`.** The spec contains both GWT scenarios (SCN-{NNN}) and EARS requirements (SR-{NNN}); I read both but write neither. Those are owned by `flow-spec` and `flow-eval` skills, which invoke spec-writer and evaluator agents.
