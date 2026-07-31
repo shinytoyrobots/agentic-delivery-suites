@@ -472,6 +472,7 @@
     <p class="toc-title">On this page</p>
     <nav>
       <ol>
+        <li><a href="#quickstart">Quickstart, in plain English</a></li>
         <li><a href="#what-flow-is">What flow is</a></li>
         <li><a href="#why-it-exists">Why it exists</a></li>
         <li>
@@ -522,6 +523,16 @@
   <p class="lede">Most AI delivery tools graft language models onto existing Scrum workflows. <code>flow</code> doesn't.</p>
 </header>
 
+<h2 id="quickstart">Quickstart, in plain English <a class="anchor" href="#quickstart" aria-label="Permalink">#</a></h2>
+
+<p><code>flow</code> builds software by writing a precise spec, then generating several competing implementations of it at once, scoring them against automated tests from multiple angles, and keeping only the ones nothing else beats — repeating until the population settles on a winner. You review the spec and make the judgment calls; the suite does the building and scoring. It shines when requirements can be pinned down precisely and quality has real trade-offs worth exploring.</p>
+
+<p><strong>What it costs:</strong> each generated implementation runs roughly 150k–400k tokens depending on the effort's cost/rigor tier (its <em>weight class</em>), so one generation of a heavyweight effort can run into millions of tokens. <code>/flow-init</code> sets the tier and budgets with you up front.</p>
+
+<p><strong>When not to use it:</strong> work too vague to spec precisely, single-file fixes, or anything where one obvious implementation exists — a plain Claude Code session or the <code>delivery-team</code> suite is cheaper and faster there. The suite's own hotfix path (<code>/flow-generate --hotfix</code>) covers emergencies.</p>
+
+<hr>
+
 <p>Scrum exists because humans get tired, change their minds, and need ceremony to coordinate. Agents have none of those problems. The rituals that compensate for them — sprints, stories, retros, readiness gates, fixed roles — aren't features. They're scar tissue from a constraint that no longer applies.</p>
 
 <p>This is the practitioner's guide. If you're deciding whether <code>flow</code> fits your work, read the rationale and the benefits. If you've decided to try it, skip to the walkthrough. The philosophy in dense form is in <code>context/flow-philosophy.md</code>; the directory schema is in <code>context/flow-state-model.md</code>. This document is the bridge.</p>
@@ -566,9 +577,9 @@
 
 <h3 id="decision-quality">Decision quality from population search <a class="anchor" href="#decision-quality" aria-label="Permalink">#</a></h3>
 
-<p><code>delivery-team</code> builds one implementation per story and asks "did it pass?" <code>flow</code> builds five (default; the orchestrator scales from 1 to 10 by complexity, with a hotfix bypass to a single serialized variant) and asks "which trades off which way?" Five Pareto-scored variants give gradient signal — this one is faster but more complex, that one is simpler but slower — instead of a binary pass/fail on a single attempt.</p>
+<p><code>delivery-team</code> builds one implementation per story and asks "did it pass?" <code>flow</code> builds a population — three to seven variants depending on the effort's weight class, with a hotfix bypass to a single serialized variant — and asks "which trades off which way?" Pareto-scored variants give gradient signal — this one is faster but more complex, that one is simpler but slower — instead of a binary pass/fail on a single attempt.</p>
 
-<p>The cost is real. Roughly 5x generation tokens per effort. A medium feature runs $5–15 per generation (estimate), against $1–3 for a single-implementation <code>delivery-team</code> run. With Sonnet or Haiku for generators and Opus reserved for the orchestrator and evaluator, the delta is meaningful but not prohibitive. On bounded problems with clear eval surfaces, the decision-quality gain pays for it.</p>
+<p>The cost is real, and it's managed explicitly. Each variant runs roughly 150k–400k tokens depending on the weight class (light, standard, or heavy), so a heavy generation can reach several million tokens. The class — assigned at <code>flow-init</code> — sets the whole dispatch envelope: population width, model tier per generator bias, evaluator depth, and mandatory per-variant and per-generation token budgets that the orchestrator enforces at dispatch. Light-class efforts keep a real population (three cheap-tier variants) because independent spec readings are the population's diagnostic value; the cost cut comes from model tier and protocol depth, not width. On bounded problems with clear eval surfaces, the decision-quality gain pays for it. See <code>context/flow-dispatch-rules.md</code> for the tier tables and guardrails.</p>
 
 <h3 id="consistent-comms">Consistent comms via spec projection <a class="anchor" href="#consistent-comms" aria-label="Permalink">#</a></h3>
 
@@ -632,7 +643,7 @@
 <p>Before running any flow skill:</p>
 <ul>
   <li>Claude Code installed and able to read <code>~/.claude/commands/</code></li>
-  <li>The <code>flow</code> suite linked into <code>~/.claude/commands/</code> (symlinked from this repo)</li>
+  <li>The <code>flow</code> suite installed into <code>~/.claude/</code> — run <code>./install.sh --suite flow</code> from the repo root</li>
   <li>A working directory — greenfield or an existing codebase with git initialized</li>
   <li>Working familiarity with EARS notation (Easy Approach to Requirements Syntax) — see <code>context/flow-spec-protocol.md</code> if unfamiliar</li>
   <li>A purpose paragraph for the effort: what problem you're solving and why</li>
@@ -644,11 +655,11 @@
 
 <pre><code>/flow-init &lt;effort-slug&gt; [--from-spec &lt;path&gt;] [--from-delivery-team &lt;effort&gt;]</code></pre>
 
-<p><code>flow-init</code> bootstraps the directory structure. It asks for a purpose paragraph, the codebase path, your HITL mode, any hard prohibitions, and the starting temperature. It then writes:</p>
+<p><code>flow-init</code> bootstraps the directory structure. It asks for a purpose paragraph, the codebase path, your HITL mode, any hard prohibitions, and the starting temperature. It also proposes a <strong>weight class</strong> (light | standard | heavy) from the effort's signals — scope size, blast radius, whether the work is security-bearing (always heavy), novel architecture versus a port — and confirms it with you along with the token budgets it implies, in plain terms you can veto. It then writes:</p>
 
 <ul>
   <li><code>spec/spec.md</code> — initial EARS-formatted executable spec (may be skeletal)</li>
-  <li><code>spec/constitution.md</code> — governance: prohibitions, preferences, escalation triggers</li>
+  <li><code>spec/constitution.md</code> — governance: prohibitions, preferences, escalation triggers, plus the weight class and the mandatory <code>token-budget-per-variant</code> / <code>token-budget-per-generation</code> fields</li>
   <li><code>evals/harness.yaml</code> — eval suite scaffolded with six default dimensions (correctness, performance, maintainability, accessibility, security, cost)</li>
   <li><code>efforts/{slug}/flow-state.yaml</code> — convergence score, temperature, WIP spread, Pareto front, active dissents</li>
   <li><code>.flow-index/</code> — codebase index for context curation</li>
@@ -660,11 +671,13 @@
 
 <h3 id="phase-2" class="phase">Phase 2 — Evolve the spec <a class="anchor" href="#phase-2" aria-label="Permalink">#</a></h3>
 
-<pre><code>/flow-spec &lt;natural-language intent or "amend SR-NNN ..."&gt; | --restructure | --constitution</code></pre>
+<pre><code>/flow-spec &lt;natural-language intent or "amend SR-NNN ..."&gt; | --restructure | --constitution | --panel [SR-IDs]</code></pre>
 
 <p>Any time intent changes, route it through <code>flow-spec</code>. It refuses vague natural language: user journeys become GWT scenarios (<code>SCN-{NNN}</code>), and non-functional intents become derived EARS requirements (<code>SR-{NNN}</code>). It versions <code>spec/spec.md</code>, writes an entry in <code>spec/history/</code>, and triggers a dissent reactivation check — a spec change may match an archived dissent's condition.</p>
 
 <p><code>--restructure</code> groups SRs without changing semantics. <code>--constitution</code> amends <code>spec/constitution.md</code> — prohibitions, preferences, escalation triggers, dispatch overrides — which is the only sanctioned way to change governance after init.</p>
+
+<p><code>--panel</code> runs the <strong>interpretation panel</strong>, a cheap pre-generation spec probe: 3–5 parallel readers each independently commit to an interpretation of the in-scope requirements, the decision points where the text admits two readings, and an interface-level sketch — ~5–8k tokens each, versus ~400k per implementation. Divergent readings locate spec ambiguity <em>before</em> any generator runs; each divergence becomes a proposed amendment. Recommended before every first generation.</p>
 
 <p>The spec is the contract every downstream skill assumes. Skip <code>flow-spec</code> and edit requirements ad-hoc, and the chain breaks silently.</p>
 
@@ -681,7 +694,9 @@
 <pre><code>/flow-generate [scope SR-IDs or "all"] [--hotfix] [--N &lt;count&gt;]
 /flow-cull     [--depth quick|standard|deep|adversarial]</code></pre>
 
-<p><code>flow-generate</code> dispatches generator agents in parallel. Default population is 5; the orchestrator scales from 1 to 10 based on complexity (SR count, blast radius, plateau state, temperature). <code>--hotfix</code> bypasses population search entirely and serializes a single variant. <code>--N</code> overrides the orchestrator's choice. Each generator gets a distinct constraint bias (<code>simplicity</code>, <code>performance</code>, <code>maintainability</code>, <code>security</code>, <code>convention</code>, plus <code>radical</code> at high temperatures) and writes to its own variant directory under <code>efforts/{slug}/generations/gen-{N}/population/</code>.</p>
+<p><code>flow-generate</code> dispatches generator agents in parallel. Population size comes from the effort's weight-class envelope — light 3 (cheap tier), standard 3–5, heavy 5–7, with a hard ceiling of 10 — refined by the <em>in-scope delta</em> (how many requirements this generation actually touches, not the spec's total size), plateau state, and temperature. <code>--hotfix</code> bypasses population search entirely and serializes a single variant. <code>--N</code> overrides the orchestrator's choice. Each generator gets a distinct constraint bias (<code>simplicity</code>, <code>performance</code>, <code>maintainability</code>, <code>security</code>, <code>convention</code>, plus <code>radical</code> at high temperatures), a model tier assigned per class and bias, its per-variant token budget as a working constraint in the prompt, and writes to its own variant directory under <code>efforts/{slug}/generations/gen-{N}/population/</code>.</p>
+
+<p>Every generator also maintains a <strong>decision ledger</strong> in its variant directory: one severity-tagged entry per point where the spec admitted two readings, with the reading chosen and what the alternative would have produced. The evaluator audits the ledgers — for each entry, "would the eval suite detect the difference?" — and HIGH-severity entries escalate to the human. On the single-variant hotfix path the ledger plus its audit is the only spec probe there is, so it's mandatory there.</p>
 
 <p><code>flow-cull</code> runs the eval suite against each variant, computes the Pareto front, archives strictly-dominated variants, and flags any metastable candidates — stable intermediate states with partial spec proximity that are first-class ship candidates, not WIP. The <code>--depth</code> flag controls eval depth; <code>adversarial</code> runs the Goodhart-detection passes.</p>
 
@@ -708,19 +723,21 @@
 <p>These aren't phase-bound. Invoke any time:</p>
 
 <ul>
-  <li><code>/flow-pulse [--comms | --verbose | --json]</code> — read-only state report: convergence score, Pareto front, temperature, WIP spread, active dissents. The single status command. No sprint velocity. <code>--comms</code> projects the current spec-delta into audience-tiered comms on demand.</li>
+  <li><code>/flow-pulse [--comms | --verbose | --json]</code> — read-only state report: convergence score, Pareto front, temperature, WIP spread, active dissents, and last-generation spend (estimated vs. observed). The single status command. No sprint velocity. <code>--comms</code> projects the current spec-delta into audience-tiered comms on demand.</li>
   <li><code>/flow-dissent --list-active | --list-reactivated | --check | acknowledge &lt;id&gt; | mitigate &lt;id&gt; --commit &lt;sha&gt; | resolve &lt;id&gt; --reason &lt;text&gt;</code> — query the registry, run a manual reactivation check, or take action on a surfaced dissent.</li>
 </ul>
+
+<p>Every skill in the suite closes with a plain-English operator block — what happened, what it means, decisions needed, next step — per the voice contract in <code>context/flow-operator-voice.md</code>. Suite jargon is glossed on every use; you should never need this guide open to read a skill's output.</p>
 
 <h2 id="walkthrough">A walkthrough sketch <a class="anchor" href="#walkthrough" aria-label="Permalink">#</a></h2>
 
 <p>Illustrative, not a script. A first effort using <code>flow</code> typically runs three to four generations before convergence. Rough shape:</p>
 
 <ol>
-  <li><strong>Init.</strong> <code>/flow-init customer-portal-rewrite</code> with a purpose paragraph and the codebase path. Skeletal spec with 3–5 SRs. Default temperature 0.5.</li>
+  <li><strong>Init.</strong> <code>/flow-init customer-portal-rewrite</code> with a purpose paragraph and the codebase path. Skeletal spec with 3–5 SRs. Standard weight class confirmed with its budgets; default temperature 0.5.</li>
   <li><strong>Spec authoring.</strong> Two or three <code>/flow-spec</code> passes to firm up the GWT scenarios and their derived EARS requirements. HITL counter-prompts vague NL into testable form.</li>
   <li><strong>Eval bootstrapping.</strong> <code>/flow-eval</code> populates the datasets. Correctness and security get adversarial holdouts.</li>
-  <li><strong>Gen 1.</strong> <code>/flow-generate</code> spawns 5 variants. <code>/flow-cull</code> reveals two on the Pareto front, three dominated. <code>/flow-converge</code> says no — inter-variant similarity is low.</li>
+  <li><strong>Gen 1.</strong> <code>/flow-spec --panel</code> surfaces one ambiguity; the spec is amended. <code>/flow-generate</code> spawns 5 variants. <code>/flow-cull</code> reveals two on the Pareto front, three dominated. <code>/flow-converge</code> says no — inter-variant similarity is low.</li>
   <li><strong>Gen 2.</strong> Generators re-run against the spec, biased by the gen-1 front. Similarity rises but the maintainability dimension plateaus.</li>
   <li><strong>Reheat.</strong> <code>/flow-anneal heat</code>. A new constraint-bias is seeded.</li>
   <li><strong>Gen 3.</strong> Survivors converge. Pareto front is stable. <code>/flow-chavruta</code> runs and produces one dissent — stability reviewer flags a load-spike condition.</li>
@@ -744,6 +761,8 @@
     <tr><td><code>wip-spread</code></td><td>Admission cost for new work items (price signal, not cap)</td></tr>
     <tr><td><code>pareto-front</code></td><td>Best score per dimension across the current generation</td></tr>
     <tr><td><code>active-dissents</code></td><td>Count; full records in <code>dissents-active.yaml</code></td></tr>
+    <tr><td><code>dispatch.weight-class</code></td><td><code>light</code> / <code>standard</code> / <code>heavy</code>; sets the dispatch envelope (mirrors the constitution)</td></tr>
+    <tr><td><code>spend.last-generation</code></td><td>Estimated vs. observed tokens for the last generation, with a precision tag</td></tr>
     <tr><td><code>hitl-mode</code></td><td><code>preference-articulator</code> / <code>comprehension-auditor</code> / <code>reactivation-watch</code> / <code>autonomous</code></td></tr>
   </tbody>
 </table>

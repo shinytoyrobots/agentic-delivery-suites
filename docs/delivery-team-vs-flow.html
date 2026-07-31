@@ -546,12 +546,13 @@
   <tbody>
     <tr><td>Mental model</td><td>Human sprint, AI in every seat</td><td>Population search over a spec</td></tr>
     <tr><td>Unit of work</td><td>Story (prose)</td><td>GWT scenario (SCN) → derived EARS (SR) → variants</td></tr>
-    <tr><td>Agents</td><td>Fixed roles = job titles</td><td>Dynamic count = f(complexity)</td></tr>
+    <tr><td>Agents</td><td>Fixed roles = job titles</td><td>Dynamic count = f(weight class, delta)</td></tr>
     <tr><td>Progress</td><td>Linear stages + gates</td><td>Generations until convergence</td></tr>
     <tr><td>Quality</td><td>Single-threshold gate</td><td>Multi-objective Pareto front</td></tr>
     <tr><td>Code</td><td>The artifact</td><td>Regenerated output of the spec</td></tr>
     <tr><td>Disagreement</td><td>Resolved at a gate</td><td>Preserved with reactivation conditions</td></tr>
     <tr><td>Cadence</td><td>Time-boxed sprint</td><td>Continuous flow</td></tr>
+    <tr><td>Cost control</td><td>Per-agent, ad hoc</td><td>Weight-class envelope + mandatory budget guardrails</td></tr>
   </tbody>
 </table>
 
@@ -603,7 +604,7 @@ flowchart TD
 
 <h2 id="diagram-flow">flow — AI-first generate-and-converge <a class="anchor" href="#diagram-flow" aria-label="Permalink">#</a></h2>
 
-<p>No sprint. The spec (GWT scenarios → derived EARS, executable, versioned) is the source of truth; code is regenerated output. The orchestrator dispatches <em>N</em> parallel generators where <em>N</em> is a function of complexity, not roles. Each writes only to its own variant directory (P1: intelligence parallel, writes serial). A multi-objective evaluator scores variants on a Pareto front; the effort converges rather than ending on a date.</p>
+<p>No sprint. The spec (GWT scenarios → derived EARS, executable, versioned) is the source of truth; code is regenerated output. The orchestrator dispatches <em>N</em> parallel generators, where <em>N</em> comes from the effort's weight-class envelope (light 3 / standard 3–5 / heavy 5–7, ceiling 10) refined by the in-scope requirement delta — not from fixed roles. Each writes only to its own variant directory (P1: intelligence parallel, writes serial). A multi-objective evaluator scores variants on a Pareto front; the effort converges rather than ending on a date.</p>
 
 <div class="diagram">
 <pre class="mermaid">
@@ -613,7 +614,7 @@ flowchart TD
 
     SPEC --> ORCH
 
-    ORCH["flow-orchestrator<br/>dynamic dispatch<br/>N = f(complexity), not fixed roles<br/>(P1: writes serialize here)"]
+    ORCH["flow-orchestrator<br/>dynamic dispatch<br/>N = f(weight class, delta), not fixed roles<br/>(P1: writes serialize here)"]
 
     subgraph GEN["Generation N — intelligence parallel, writes serial"]
         direction LR

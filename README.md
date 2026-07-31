@@ -5,7 +5,7 @@ Most tools for building software with AI keep the process we already have — th
 | Suite | Premise | In one line |
 |-------|---------|-------------|
 | [**`delivery-team`**](./delivery-team/) | *AI acceleration of a human sprint* | 13 sub-agents acting as a complete product-delivery team, orchestrated through an 11-skill sprint lifecycle. |
-| [**`flow`**](./flow/) | *AI-first from the ground up* | The spec is the source of truth; code is regenerated output. Parallel generators, multi-objective Pareto evaluation, convergence instead of calendar. |
+| [**`flow`**](./flow/) | *AI-first from the ground up* | The spec is the source of truth; code is regenerated output. Parallel generators, multi-objective Pareto evaluation, convergence instead of calendar — with weight-classed cost envelopes and mandatory token budgets. |
 
 `delivery-team` keeps the shape of a Scrum sprint — stories, gates, retros, fixed roles — and makes every seat faster. `flow` discards that scaffolding and rebuilds the pipeline around what LLM agents are uniquely good at (parallel reading, structured scoring, deterministic projection) and bad at (parallel writes, free-form coordination, drifting prose).
 

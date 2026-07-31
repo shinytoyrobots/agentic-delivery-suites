@@ -65,10 +65,12 @@ humans gate each transition.
 ## Diagram 2 — `flow`: AI-first generate-and-converge
 
 No sprint. The spec (EARS, executable, versioned) is the source of truth; code is
-regenerated output. The orchestrator dispatches *N* parallel generators where *N* is a
-function of complexity, not roles. Each writes only to its own variant directory
-(P1: intelligence parallel, writes serial). A multi-objective evaluator scores variants
-on a Pareto front; the effort converges rather than ending on a date.
+regenerated output. The orchestrator dispatches *N* parallel generators, where *N* comes
+from the effort's weight-class envelope (light 3 / standard 3–5 / heavy 5–7, ceiling 10)
+refined by the in-scope requirement delta — not from fixed roles. Each writes only to its
+own variant directory (P1: intelligence parallel, writes serial). A multi-objective
+evaluator scores variants on a Pareto front; the effort converges rather than ending on
+a date.
 
 ```mermaid
 flowchart TD
@@ -77,7 +79,7 @@ flowchart TD
 
     SPEC --> ORCH
 
-    ORCH["flow-orchestrator<br/><b>dynamic dispatch</b><br/>N = f(complexity), not fixed roles<br/>(P1: writes serialize here)"]
+    ORCH["flow-orchestrator<br/><b>dynamic dispatch</b><br/>N = f(weight class, delta), not fixed roles<br/>(P1: writes serialize here)"]
 
     subgraph GEN["Generation N — intelligence parallel, writes serial"]
         direction LR
@@ -128,24 +130,25 @@ dissent with reactivation, not forced consensus.
 |---|---|---|
 | Mental model | Human sprint, AI in every seat | Population search over a spec |
 | Unit of work | Story (prose) | GWT scenario (SCN) → derived EARS (SR) → variants |
-| Agents | Fixed roles = job titles | Dynamic count = f(complexity) |
+| Agents | Fixed roles = job titles | Dynamic count = f(weight class, delta) |
 | Progress | Linear stages + gates | Generations until convergence |
 | Quality | Single-threshold gate | Multi-objective Pareto front |
 | Code | The artifact | Regenerated output of the spec |
 | Disagreement | Resolved at a gate | Preserved with reactivation conditions |
 | Cadence | Time-boxed sprint | Continuous flow |
+| Cost control | Per-agent, ad hoc | Weight-class envelope + mandatory budget guardrails |
 
 ---
 
 ## Implemented: GWT → EARS layered spec
 
-> **Status: implemented & merged** ([PR #100](https://github.com/your-org/your-repo/pull/100)).
+> **Status: implemented & merged.**
 > `flow`'s entry unit of work is now a **Given/When/Then behavioral scenario** (`SCN-{NNN}`)
 > that derives the EARS requirements (`SR-{NNN}`) — so the spec is *user/product-focused
 > first* rather than engineering-spec-first. See `flow/context/flow-spec-protocol.md` and
 > `flow/context/flow-philosophy.md` (P3). A rendered version of this page is at
-> [`delivery-team-vs-flow.html`](delivery-team-vs-flow.html); the practitioner's guide is
-> [`flow/USAGE.html`](flow/USAGE.html).
+> [`docs/delivery-team-vs-flow.html`](docs/delivery-team-vs-flow.html); the practitioner's
+> guide is [`docs/index.html`](docs/index.html) (source: `flow/USAGE.md`).
 
 Previously `flow-spec-writer` converted NL straight to EARS (`The {system} shall…`), a
 *system-centric* grammar. Leading with GWT keeps observable user behavior primary and
