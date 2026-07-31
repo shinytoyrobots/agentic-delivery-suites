@@ -8,7 +8,7 @@ Where `delivery-team` accelerates human Scrum workflows with AI, `flow` is AI-fi
 
 ## Why this exists
 
-Research synthesis (`~/Documents/knowledge-vault/Notes/Reference/Deep-Research/2026-05-13-ai-first-delivery-suite/research-output.md`) identified six load-bearing AI-first principles that the current `delivery-team` suite either violates or doesn't exploit:
+A synthesis of the 2024–2026 compound-AI research literature (sources in the "Research provenance" table below) identified six load-bearing AI-first principles that the `delivery-team` suite either violates or doesn't exploit:
 
 1. **Intelligence parallel, writes serial** — Cognition AI pivot. Parallel writes accumulate conflicting implicit decisions.
 2. **Dynamic dispatch over fixed roles** — MASS paper (Stanford, 2025): topology + prompt optimization beats role-play by 78.8%.
@@ -138,14 +138,14 @@ See `context/flow-state-model.md` for the full schema.
 
 ## Testing this suite
 
-See `research-output.md` §6 for the A/B harness. Six metrics, defined before either run:
+An A/B harness for comparing the two suites. Six metrics, defined before either run:
 
 - Wall-clock time to first shippable variant
 - Total token spend
 - Human review burden (minutes)
 - Eval-front coverage (objective dimensions passing thresholds)
 - Defect rate at +14 days post-merge
-- Comprehension cost (Robin + one other reviewer self-report at +7 days)
+- Comprehension cost (a maintainer + one other reviewer self-report at +7 days)
 
 `flow` wins if it improves ≥4 of 6 metrics by ≥20% AND no metric regresses by more than 10%.
 

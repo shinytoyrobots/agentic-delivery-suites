@@ -107,10 +107,10 @@ For each (bias, index) pair from the orchestrator's dispatch:
    - **Weight class + self-check tier** (light | standard | heavy — see `flow-generator.md` §Self-check tiers)
    - **Per-variant token budget** (verbatim): "Stay within ~{X}k tokens for this run. If the protocol genuinely demands more, raise a `budget-pressure` flag in notes.md rather than silently expanding."
    - Active dissents to address
-   - Variant directory path — **MUST be relative** (e.g. `efforts/{effort}/generations/gen-{N+1}/population/var-{index}/`). Never pass an absolute path that contains `/Users/.../new-ks-website` — it will resolve to the main tree regardless of the agent's worktree cwd and is the primary mechanism behind the gen-3/var-3 + gen-5/var-2 isolation leaks.
+   - Variant directory path — **MUST be relative** (e.g. `efforts/{effort}/generations/gen-{N+1}/population/var-{index}/`). Never pass an absolute path into the main project tree — it will resolve there regardless of the agent's worktree cwd and is the primary mechanism behind the gen-3/var-3 + gen-5/var-2 isolation leaks.
    - **Explicit isolation contract** (copy verbatim into each generator's prompt):
      > Before any other action, run `TOPLEVEL=$(git rev-parse --show-toplevel)` and verify it starts with `*/.claude/worktrees/agent-`. If not, ABORT and return `isolation-violation` HITL flag. Re-verify before every git mutation (`git switch`, `git checkout`, `git branch`, `git add`, `git commit`). All your work happens inside this worktree. If a pre-commit hook fails because `node_modules` is missing, run `pnpm install` in the worktree — do NOT fall back to the main tree.
-   - **Explicit instruction**: write ONLY to variant directory metadata + your worktree's project tree; do not touch `/Users/shinytoyrobots/Development/work/new-ks-website` at any absolute path.
+   - **Explicit instruction**: write ONLY to variant directory metadata + your worktree's project tree; do not touch the main project tree at any absolute path.
 4. Generators run in parallel (multiple Agent calls in one message).
 
 ### Step 6: Wait for completion

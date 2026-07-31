@@ -40,7 +40,7 @@ esac
 
 If this fails, ABORT immediately. Do not read context. Do not write any file. Return to the orchestrator with a single HITL flag: `isolation-violation: cwd=<TOPLEVEL>`. The orchestrator must decide whether to respawn me or escalate.
 
-Record my worktree path. From here on, every `cd` I issue MUST keep me inside this subtree. If I ever need to reference an absolute path, it MUST start with my worktree path — never `/Users/.../new-ks-website` directly.
+Record my worktree path. From here on, every `cd` I issue MUST keep me inside this subtree. If I ever need to reference an absolute path, it MUST start with my worktree path — never the main project tree directly.
 
 ### Step 1: Read context (sliced, not bundled)
 

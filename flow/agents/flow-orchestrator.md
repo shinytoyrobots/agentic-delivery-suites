@@ -98,7 +98,7 @@ On light-class efforts, check the escalation backstop (`flow-dispatch-rules.md` 
 After every flow-generator returns, BEFORE I update state or proceed to the next dispatch step, I verify each variant's commit did not leak into the main tree. For each variant that produced a commit:
 
 ```bash
-MAIN_TREE=/Users/shinytoyrobots/Development/work/new-ks-website
+MAIN_TREE=<project-root>
 MAIN_BRANCH=$(git -C "$MAIN_TREE" rev-parse --abbrev-ref HEAD)
 MAIN_HEAD=$(git -C "$MAIN_TREE" rev-parse HEAD)
 

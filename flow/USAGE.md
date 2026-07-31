@@ -118,7 +118,7 @@ The lifecycle is six phases. Skills are user-invoked slash commands; agents are 
 Before running any flow skill:
 
 - Claude Code installed and able to read `~/.claude/commands/`
-- The `flow` suite linked into `~/.claude/commands/` (symlinked from this repo per the monorepo convention in the root `CLAUDE.md`)
+- The `flow` suite installed into `~/.claude/` — run `./install.sh --suite flow` from the repo root (see the root `README.md` for options)
 - A working directory — greenfield or an existing codebase with git initialized
 - Working familiarity with EARS notation (Easy Approach to Requirements Syntax) — see `context/flow-spec-protocol.md` if unfamiliar
 - A purpose paragraph for the effort: what problem you're solving and why
@@ -253,4 +253,4 @@ Two limits worth naming up front. Fourteen days is too short to measure long-ter
 - `context/flow-eval-protocol.md` — eval suite structure, multi-objective Pareto, metastable detection
 - `context/flow-dispatch-rules.md` — dynamic complexity-based dispatch and the canonical generator-count rules
 - `context/flow-dissent-protocol.md` — dissent object schema, reactivation conditions, monitor behavior
-- Deep research source: `~/Documents/knowledge-vault/Notes/Reference/Deep-Research/2026-05-13-ai-first-delivery-suite/research-output.md`
+- Research provenance: the sources behind the six principles are listed in the "Research provenance" table in `README.md`

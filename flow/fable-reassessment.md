@@ -60,7 +60,7 @@ quality gain and (b) Claude Code grows a refusal-fallback story.
 
 Fable requires 30-day data retention; a non-compliant org gets `400 invalid_request_error`
 on every request regardless of payload. The gate is the API org behind the active Claude
-Code credential (currently robin@knapsack.cloud), not whether the repo is personal.
+Code credential, not whether the repo is personal.
 **Verify before debugging anything else** when Fable requests fail suspiciously.
 
 ### 4. Prescriptiveness — the swap alone may make specs worse
