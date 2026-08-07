@@ -36,6 +36,15 @@ Suite terms stay canonical in state files. In operator output, use the plain phr
 
 Terms not in the table follow the same pattern: plain phrase first, canonical term in parentheses, every time.
 
+## The cold-reader test
+
+Every operator-register sentence must parse for someone who has never opened `flow-state.yaml` or a
+dispatch record. If a sentence needs those files to make sense, it belongs in an artifact referenced
+by path, not in the window. This applies to **interim progress updates between agent runs**, not only
+the closing block — glossing a term is not enough if the sentence structure stays in the audit
+register ("resolved on non-scalar grounds", "inside SENS bands"). Prefer short declarative sentences:
+"We checked whether the project has settled enough to ship. It has — comfortably."
+
 ## No naked metrics
 
 Any number whose naive reading is wrong is printed **with its correct reading attached**, or not printed at all.
