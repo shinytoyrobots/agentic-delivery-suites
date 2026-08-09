@@ -8,9 +8,10 @@ assumptions:
   stage; each agent maps to a job title. AI makes every seat faster, but the shape is
   the sprint.
 - **`flow`** — *an AI-first approach to building.* The spec is the source of truth and
-  code is regenerated output. An orchestrator dynamically dispatches parallel generators,
-  a multi-objective evaluator scores them on a Pareto front, and the effort *converges*
-  rather than ending on a calendar date.
+  code is regenerated output. An orchestrator dispatches one wide probe generation of
+  parallel generators, a multi-objective evaluator scores them on a Pareto front, and the
+  winner ships through an *evidence gate* rather than on a calendar date. Further
+  generations happen only when evidence demands them.
 
 ---
 
@@ -62,65 +63,73 @@ humans gate each transition.
 
 ---
 
-## Diagram 2 — `flow`: AI-first generate-and-converge
+## Diagram 2 — `flow`: AI-first probe-and-ship
 
 No sprint. The spec (EARS, executable, versioned) is the source of truth; code is
-regenerated output. The orchestrator dispatches *N* parallel generators, where *N* comes
-from the effort's weight-class envelope (light 3 / standard 3–5 / heavy 5–7, ceiling 10)
-refined by the in-scope requirement delta — not from fixed roles. Each writes only to its
-own variant directory (P1: intelligence parallel, writes serial). A multi-objective
-evaluator scores variants on a Pareto front; the effort converges rather than ending on
-a date.
+regenerated output. A cheap interpretation panel probes the spec for ambiguity before any
+implementation token is spent. The orchestrator then dispatches **one wide probe
+generation** of *N* parallel generators, where *N* comes from the effort's weight-class
+envelope (light 3 / standard 3 / heavy 5–7, ceiling 10) — not from fixed roles. Each
+writes only to its own variant directory (P1: intelligence parallel, writes serial). A
+multi-objective evaluator scores variants on a Pareto front with a noise floor; the cull
+close is the checkpoint — adversarial review and the ship decision follow immediately.
+The winner ships through `flow-ship`'s gate on named qualitative grounds; post-ship,
+narrow redispatch (N=1–2, grafting from the shipped variant) happens only on named
+evidence — a fired watch, a fork the evals can't settle, a spec change.
 
 ```mermaid
 flowchart TD
     SPEC["📜 spec.md + constitution.md<br/>GWT scenarios (SCN) → derived EARS (SR)<br/>executable, versioned<br/><b>source of truth — code is regenerated</b>"]
     EVAL["evals/ — multi-objective suite<br/>correctness · perf · maintainability<br/>a11y · security · cost<br/>(versioned, with adversarial holdouts)"]
 
-    SPEC --> ORCH
+    SPEC --> PANEL
+
+    PANEL["flow-panel<br/>3–5 cheap parallel readers<br/>divergent readings → spec amendments<br/><b>gen-1 requires a panel record</b>"]
+    PANEL --> ORCH
 
     ORCH["flow-orchestrator<br/><b>dynamic dispatch</b><br/>N = f(weight class, delta), not fixed roles<br/>(P1: writes serialize here)"]
 
-    subgraph GEN["Generation N — intelligence parallel, writes serial"]
+    subgraph GEN["One wide probe generation — intelligence parallel, writes serial"]
         direction LR
-        V1["generator<br/>bias: simplicity"]
-        V2["generator<br/>bias: performance"]
-        V3["generator<br/>bias: …"]
+        V1["generator<br/>bias: maintainability"]
+        V2["generator<br/>bias: simplicity"]
+        V3["generator<br/>bias: convention"]
     end
 
     ORCH ==>|"spawn parallel variants<br/>each writes ONLY its own dir"| GEN
 
-    CULL["flow-cull<br/>score vs evals<br/><b>Pareto front survives</b><br/>metastable = ship candidate"]
+    CULL["flow-cull<br/>score vs evals, noise floor<br/><b>Pareto front survives</b><br/>cull close = the checkpoint"]
     EVAL -.feeds.-> CULL
     GEN --> CULL
 
     CHAV["flow-chavruta<br/>stability vs velocity reviewers<br/><b>exit at documented dissent</b>,<br/>not consensus → dissents-active.yaml"]
     CULL --> CHAV
 
-    CONV{"flow-converge<br/>inter-variant similarity<br/>above threshold?"}
-    CHAV --> CONV
+    GATE{"flow-ship gate<br/>named qualitative grounds<br/>deep eval pass · ledger audit<br/>FIRED revert probe · watches"}
+    CHAV --> GATE
 
-    CONV -->|"no — reheat / new generation"| ORCH
-    CONV -->|"yes — promote 1 survivor"| SHIP["flow-ship<br/>progressive rollout via flags<br/>comms derived from spec delta<br/>post-ship eval monitoring"]
+    GATE -->|"ship — clean, or gated behind flags"| SHIP["flow-ship<br/>progressive rollout via flags<br/>changelog + ship record from spec delta<br/>pre-registered post-ship watches"]
 
     MON["flow-dissent-monitor<br/>watches commits for<br/>reactivation triggers"]
     SHIP -.monitored.-> MON
     MON -.reactivated dissent.-> ORCH
+    SHIP -.->|"fired watch / eval-blind fork / spec delta<br/><b>narrow redispatch, N=1–2 + graft</b>"| ORCH
 
     classDef truth fill:#e6f4ea,stroke:#34a853,color:#1a1a1a;
     classDef agent fill:#f3e8fd,stroke:#a142f4,color:#1a1a1a;
     classDef gen fill:#fce8e6,stroke:#ea4335,color:#1a1a1a;
     classDef decision fill:#fff4e5,stroke:#f59e0b,color:#1a1a1a;
     class SPEC,EVAL truth;
-    class ORCH,CULL,CHAV,SHIP,MON agent;
+    class ORCH,PANEL,CULL,CHAV,SHIP,MON agent;
     class V1,V2,V3 gen;
-    class CONV decision;
+    class GATE decision;
 ```
 
 **Characteristics:** spec → regenerated code · dynamic agent count (function-shaped, not
 role-shaped) · parallel reads/generation, serialized writes · multi-objective Pareto
-evaluation (no single gate) · continuous flow to convergence (no time box) · preserved
-dissent with reactivation, not forced consensus.
+evaluation (no single gate) · one wide probe, then evidence-gated narrow redispatch (no
+time box) · an evidence-gated ship, never a scalar · preserved dissent with reactivation,
+not forced consensus.
 
 ---
 
@@ -131,7 +140,7 @@ dissent with reactivation, not forced consensus.
 | Mental model | Human sprint, AI in every seat | Population search over a spec |
 | Unit of work | Story (prose) | GWT scenario (SCN) → derived EARS (SR) → variants |
 | Agents | Fixed roles = job titles | Dynamic count = f(weight class, delta) |
-| Progress | Linear stages + gates | Generations until convergence |
+| Progress | Linear stages + gates | Wide probe → cull → evidence-gated ship |
 | Quality | Single-threshold gate | Multi-objective Pareto front |
 | Code | The artifact | Regenerated output of the spec |
 | Disagreement | Resolved at a gate | Preserved with reactivation conditions |

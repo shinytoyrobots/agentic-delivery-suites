@@ -1,5 +1,5 @@
 ---
-description: Adversarial paired review at convergence checkpoints. Two opposing-bias reviewers produce structured dissent with reactivation conditions; exits at documented disagreement, not consensus.
+description: Adversarial paired review at consequential decision points — the cull close, the ship gate, major spec changes. Two opposing-bias reviewers produce structured dissent with reactivation conditions; exits at documented disagreement, not consensus.
 argument-hint: '[variant-id | "spec-change" | "metastable"]'
 model: opus
 allowed-tools:
@@ -15,7 +15,7 @@ tier: II
 domain: [flow]
 works-with:
   requires-context: [flow-dissent-protocol, flow-state-model, flow-philosophy, flow-operator-voice, vault-access]
-  upstream-skills: [flow-converge, flow-spec]
+  upstream-skills: [flow-cull, flow-ship, flow-spec]
   downstream-skills: [flow-ship, flow-dissent]
   compatible-agents: [flow-chavruta-pair, flow-orchestrator]
 readiness:
@@ -42,14 +42,15 @@ Read context files:
 
 Invoke a structured adversarial paired review. Two reviewers (stability-bias + velocity-bias) study the same artifact and produce structured dissent objects with explicit reactivation conditions. Replaces `dt-gate-review`'s consensus-seeking adversarial PM pair with a memory-preserving alternative.
 
-This is NOT a routine per-variant review. It is invoked at **consequential decision points**: convergence checkpoints, major spec changes, metastable-candidate ship decisions, security/performance-critical ship paths.
+This is NOT a routine per-variant review. It is invoked at **consequential decision points**: the cull close (doctrine step 5 — immediately after the first cull), the ship gate, major spec changes, gated-ship decisions, security/performance-critical ship paths.
 
 ## When invoked
 
 By skill chain:
-- `/flow-converge` — at ship recommendation
+- `/flow-cull` — at the cull close (the checkpoint)
+- `/flow-ship` — at the gate, if review has not run since the last cull
 - `/flow-spec` — on major version increment (constitution-configurable)
-- `/flow-ship --metastable` — to surface partial-completion concerns
+- `/flow-ship --gated` — to surface partial-completion concerns
 
 By human:
 - `/flow-chavruta var-3` — review a specific variant
@@ -166,9 +167,9 @@ Not idempotent in the sense that re-running creates a new chavruta session and p
 
 ## Examples
 
-### Convergence checkpoint
+### Cull-close checkpoint
 
-`/flow-converge` invoked `/flow-chavruta` automatically. Two reviewers studied var-2 (the ship candidate). One dissent raised: stability reviewer argues inline retry pattern is brittle if rate-limit handling is added; velocity reviewer argues middleware is premature abstraction. Provisional resolution: ship inline form. Reactivation: spec adds rate-limit requirement OR grep -rc 'withRetry' > 3.
+`/flow-cull` closed by invoking `/flow-chavruta` automatically. Two reviewers studied var-2 (the ship candidate). One dissent raised: stability reviewer argues inline retry pattern is brittle if rate-limit handling is added; velocity reviewer argues middleware is premature abstraction. Provisional resolution: ship inline form. Reactivation: spec adds rate-limit requirement OR grep -rc 'withRetry' > 3.
 
 ### Major spec change
 

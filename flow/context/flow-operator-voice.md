@@ -24,15 +24,19 @@ Suite terms stay canonical in state files. In operator output, use the plain phr
 | Pareto front | "variants still worth keeping (the Pareto front) — no other variant beats them everywhere" |
 | chavruta | "paired adversarial review (chavruta)" |
 | metastable candidate | "stable and shippable but not covering the full spec (a metastable candidate)" |
-| temperature | "exploration level (temperature)" |
+| gated ship | "shipped behind a flag with the gaps disclosed and watched (a gated ship)" |
 | wip-spread | "system load (wip-spread)" |
 | Goodhart signal | "score-gaming risk (a Goodhart signal)" |
 | cull | "scored the generation and archived the beaten variants (cull)" |
 | dissent reactivation | "a recorded disagreement's trigger condition fired (dissent reactivation)" |
-| convergence-score | "how settled the population is (convergence-score)" |
+| noise floor | "differences too small for the graders to mean anything (inside the noise floor)" |
+| post-ship watch | "a pre-registered condition that, if it fires, triggers action (a post-ship watch)" |
+| revert probe | "the rollback path, actually tested rather than assumed (a fired revert probe)" |
 | weight class | "the effort's cost/rigor tier (weight class)" |
 | decision ledger | "the variant's record of judgment calls the spec left open (decision ledger)" |
 | interpretation panel | "a cheap pre-check where several readers independently interpret the spec (interpretation panel)" |
+
+(`temperature` and `convergence-score` were retired by the operating doctrine; if either appears in an old artifact, gloss it as a retired instrument rather than translating it as live state.)
 
 Terms not in the table follow the same pattern: plain phrase first, canonical term in parentheses, every time.
 
@@ -49,10 +53,10 @@ register ("resolved on non-scalar grounds", "inside SENS bands"). Prefer short d
 
 Any number whose naive reading is wrong is printed **with its correct reading attached**, or not printed at all.
 
-- Wrong: `convergence: 0.25`
-- Right: "the population is still early — how settled it is (convergence-score) reads 0.25, which at gen-1 means a baseline exists, **not** that the effort is 25% done."
+- Wrong: `maintainability: var-2 0.78 vs var-5 0.77 — var-2 leads`
+- Right: "on maintainability the two variants are tied — the 0.01 gap is inside the noise floor (differences too small for the graders to mean anything), so it can't justify picking one over the other."
 
-If a metric needs a warning comment in the state file to prevent misreading, it fails this rule in raw form — translate it or omit it.
+If a metric needs a warning comment in the state file to prevent misreading, it fails this rule in raw form — translate it or omit it. (The retired convergence-score was the canonical offender — its own state-file comment had to warn "do NOT read as 25% to ship.")
 
 ## One decision per prompt
 

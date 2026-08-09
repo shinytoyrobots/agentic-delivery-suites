@@ -1,6 +1,6 @@
 ---
 description: "Author or edit the multi-objective eval suite. Add/refine dimensions, datasets, graders, thresholds. Goodhart-mitigation via real + adversarial datasets per dimension."
-argument-hint: "[dimension-name] | --add-dataset <dim> <path> | --refine <grader> | --threshold <dim> <value>"
+argument-hint: "[dimension-name] | --add-dataset <dim> <path> | --refine <grader> | --threshold <dim> <value> | --characterize <dim>"
 model: opus
 allowed-tools:
   - Read
@@ -15,7 +15,7 @@ capability-class: planning-design
 tier: II
 domain: [flow]
 works-with:
-  requires-context: [flow-eval-protocol, flow-state-model, flow-philosophy, flow-operator-voice, vault-access]
+  requires-context: [flow-eval-protocol, flow-state-model, flow-philosophy, flow-operating-doctrine, flow-operator-voice, vault-access]
   upstream-skills: [flow-init, flow-spec]
   downstream-skills: [flow-generate, flow-cull]
   compatible-agents: [flow-evaluator, flow-spec-writer]
@@ -36,12 +36,18 @@ Read context files:
 - `~/.claude/commands/context/flow-eval-protocol.md`
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-philosophy.md`
+- `~/.claude/commands/context/flow-operating-doctrine.md`
 - `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
 
 Author, refine, or extend the eval suite. The eval suite is part of the spec contract — every SR-{NNN} maps to a (grader, dataset, threshold) tuple. This skill is where graders are written, datasets are bootstrapped, thresholds are set.
+
+**This is the priority target for spend** (doctrine step 8): the field trial measured evaluation at 1.4–1.6× generation cost at deep depth, and the verifier bounds everything downstream. Spare tokens go here — holdouts, grader-variance characterization, seam objectives — before they go to population width. Two disciplines apply to every run:
+
+- **Tier the depth**: quick during rounds; deep exactly once, at pre-ship (owned by `flow-ship`'s gate); adversarial only on gating dimensions. Never default a round to deep.
+- **Measure ONE judge before spawning the fleet**: before any LLM-judge grader runs across a population, run it once against a single variant and record the unit rate (tokens, wall-clock). Project fleet cost from the measured rate; the trial's 2.5× unit-rate surprise is the cautionary model.
 
 GWT behavioral scenarios (SCN-{NNN}) directly seed the `correctness` dimension — each scenario's acceptance criteria become scenario-graded tasks. When `/flow-spec` introduces a new SCN, it flags those acceptance criteria as pending dataset registration; this skill registers the mappings (scenario `tasks:` and any `derived-requirements:` entries) in `harness.yaml`.
 
@@ -95,7 +101,27 @@ Introduces a new objective dimension. Walks through grader spec, dataset bootstr
 
 Specifically tags a dataset as adversarial; per harness policy, variants must pass on both real and adversarial to claim the dimension.
 
+### Mode 7: Characterize grader variance (noise floor)
+
+```
+/flow-eval --characterize maintainability
+```
+
+Run a grader repeatedly (default 5x) against the same variant and record the score spread as `variance` in the grader spec. `flow-cull` treats score deltas within this characterized variance as ties; absent characterization it falls back to the global ≤0.01 tie rule. Characterize the stochastic (LLM-judge) graders first — deterministic graders have zero variance by construction.
+
 ## Procedure
+
+### Step 0: Admission gate
+
+Read `flow-state.yaml.checkpoint` (if the effort has one). If `evaluator-fleet` reads
+`blocked: {blocker}`, the last cull recorded a **structural instrument ceiling** — a
+missing runner, absent harness infrastructure, something more scoring cannot fix. While
+that holds, the only admissible work in this skill is **removing the blocker**: building
+the runner, standing up the harness, making the specifications executable. Refuse
+authoring passes, dataset expansion, and fleet re-runs — they buy coverage statements
+against the same ceiling (this is the eval-side mirror of `flow-generate`'s evidence
+halt). When the blocker is removed, clear `checkpoint.evaluator-fleet` to `open`, log it
+in the phase-log, and normal modes reopen.
 
 ### Step 1: Read state
 
@@ -139,6 +165,8 @@ After any change, run a self-check:
 - Is at least one adversarial dataset required for each numeric dimension?
 - Are any dimensions missing real + adversarial pairing on `correctness` or `security`? (Constitution-required by default.)
 - Is the score-climb-flag-threshold sensible (default 0.30)?
+- Do the doctrine's two non-negotiables still hold: `invariants` populated with dedicated graders, and a cross-boundary objective present? (A suite change may never remove them silently.)
+- Are any suite-gap findings from decision-ledger audits still unaddressed? (These arrive from `flow-cull` — a fork the suite cannot discriminate is a suite gap.)
 
 Surface gaps. Suggest fixes.
 
@@ -164,7 +192,7 @@ Return:
 | `evals/harness.yaml` | Updated |
 | `evals/graders/{dimension}.md` | Created / updated |
 | `evals/datasets/{dimension}-{real|adv}-v{N}.jsonl` | Created / updated |
-| `efforts/{effort}/flow-state.yaml` | Phase-log appended |
+| `efforts/{effort}/flow-state.yaml` | Phase-log appended; `checkpoint.evaluator-fleet` cleared to `open` when a structural blocker is removed |
 
 ## HITL surface
 

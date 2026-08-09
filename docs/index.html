@@ -494,9 +494,10 @@
             <li><a href="#phase-1">Phase 1 — Initialize</a></li>
             <li><a href="#phase-2">Phase 2 — Evolve the spec</a></li>
             <li><a href="#phase-3">Phase 3 — Author evals</a></li>
-            <li><a href="#phase-4">Phase 4 — Generate &amp; cull</a></li>
-            <li><a href="#phase-5">Phase 5 — Converge or anneal</a></li>
+            <li><a href="#phase-4">Phase 4 — Panel</a></li>
+            <li><a href="#phase-5">Phase 5 — Wide probe &amp; cull</a></li>
             <li><a href="#phase-6">Phase 6 — Review &amp; ship</a></li>
+            <li><a href="#phase-7">Phase 7 — Post-ship</a></li>
             <li><a href="#cross-cutting">Cross-cutting skills</a></li>
           </ol>
         </li>
@@ -525,9 +526,22 @@
 
 <h2 id="quickstart">Quickstart, in plain English <a class="anchor" href="#quickstart" aria-label="Permalink">#</a></h2>
 
-<p><code>flow</code> builds software by writing a precise spec, then generating several competing implementations of it at once, scoring them against automated tests from multiple angles, and keeping only the ones nothing else beats — repeating until the population settles on a winner. You review the spec and make the judgment calls; the suite does the building and scoring. It shines when requirements can be pinned down precisely and quality has real trade-offs worth exploring.</p>
+<p><code>flow</code> builds software by writing a precise spec, probing it with cheap parallel readers, then generating <strong>one wide round</strong> of competing implementations, scoring them against automated tests from multiple angles, adversarially reviewing the winner, and shipping it with a tested rollback path and pre-registered watches. You review the spec and make the judgment calls; the suite does the building and scoring. Further generations happen only when evidence demands them — a fired watch, a fork the tests can't settle, a spec change.</p>
 
-<p><strong>What it costs:</strong> each generated implementation runs roughly 150k–400k tokens depending on the effort's cost/rigor tier (its <em>weight class</em>), so one generation of a heavyweight effort can run into millions of tokens. <code>/flow-init</code> sets the tier and budgets with you up front.</p>
+<p><strong>What it costs:</strong> each generated implementation runs roughly 150k–400k tokens depending on the effort's cost/rigor tier (its <em>weight class</em>), so one generation of a heavyweight effort can run into millions of tokens. <code>/flow-init</code> sets the tier and budgets with you up front. Evaluation, not generation, is the real cost center — the suite tiers eval depth accordingly.</p>
+
+<p><strong>Three modes</strong> (the mode gate is step 0 of every effort — <code>context/flow-operating-doctrine.md</code>):</p>
+
+<table>
+  <thead>
+    <tr><th>Mode</th><th>Skills</th><th>When</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Spec-only</strong></td><td><code>/flow-spec</code> → <code>/flow-panel</code> → conventional build; tests bound to SRs</td><td>Well-understood scope that still deserves executable requirements and a decision record — "the spec is the receipts"</td></tr>
+    <tr><td><strong>Spec + eval</strong></td><td>+ <code>/flow-eval</code> graded conformance; no populations</td><td>You want graded conformance / a CI story without tournament cost</td></tr>
+    <tr><td><strong>Full flow</strong></td><td>The whole walkthrough below</td><td>Novel, ambiguous, security-bearing, or hard-to-revert scope</td></tr>
+  </tbody>
+</table>
 
 <p><strong>When not to use it:</strong> work too vague to spec precisely, single-file fixes, or anything where one obvious implementation exists — a plain Claude Code session or the <code>delivery-team</code> suite is cheaper and faster there. The suite's own hotfix path (<code>/flow-generate --hotfix</code>) covers emergencies.</p>
 
@@ -543,13 +557,13 @@
 
 <h2 id="what-flow-is">What flow is <a class="anchor" href="#what-flow-is" aria-label="Permalink">#</a></h2>
 
-<p>A Claude Code skills suite that runs software delivery as continuous flow toward convergence.</p>
+<p>A Claude Code skills suite that runs software delivery as continuous flow toward an evidence-gated ship.</p>
 
 <p>The unit of work is not a story. It's a <strong>generation</strong>: a population of implementation variants produced from a versioned spec, scored against a multi-objective eval suite, culled to a Pareto front, and either advanced or shipped. No sprint. No retro. No readiness gate. No fixed role topology.</p>
 
 <p>The spec itself is two layers. <strong>GWT behavioral scenarios</strong> (<code>SCN-{NNN}</code>) are the product-facing layer — Given/When/Then examples a human authors and reviews, which also seed the eval datasets. <strong>EARS requirements</strong> (<code>SR-{NNN}</code>) are the system-centric layer — either decomposing a scenario's acceptance criteria or capturing ambient non-functional constraints (performance, security, cost) with no scenario parent. The two are complementary, not alternatives.</p>
 
-<p>The exit is convergence. The calendar doesn't get a vote.</p>
+<p>The exit is <code>flow-ship</code>'s gate — named qualitative grounds plus compensating controls. The calendar doesn't get a vote, and neither does a scalar.</p>
 
 <p><code>delivery-team</code> accelerates a Scrum team's workflow with AI. <code>flow</code> discards the Scrum scaffolding and rebuilds the pipeline around what LLM agents are good at — parallel reading, structured scoring, deterministic projection — and what they are famously bad at — parallel writes, free-form coordination, drifting prose. The two suites are siblings in this repo, designed for head-to-head comparison.</p>
 
@@ -577,13 +591,13 @@
 
 <h3 id="decision-quality">Decision quality from population search <a class="anchor" href="#decision-quality" aria-label="Permalink">#</a></h3>
 
-<p><code>delivery-team</code> builds one implementation per story and asks "did it pass?" <code>flow</code> builds a population — three to seven variants depending on the effort's weight class, with a hotfix bypass to a single serialized variant — and asks "which trades off which way?" Pareto-scored variants give gradient signal — this one is faster but more complex, that one is simpler but slower — instead of a binary pass/fail on a single attempt.</p>
+<p><code>delivery-team</code> builds one implementation per story and asks "did it pass?" <code>flow</code> builds a population — three to seven variants depending on the effort's weight class, with a hotfix bypass to a single serialized variant — and asks "which trades off which way — and where do they disagree?" The field trial's highest-consequence defects were caught by cross-variant disagreement, not by the eval suites. Pareto-scored variants give gradient signal — this one is faster but more complex, that one is simpler but slower — instead of a binary pass/fail on a single attempt.</p>
 
 <p>The cost is real, and it's managed explicitly. Each variant runs roughly 150k–400k tokens depending on the weight class (light, standard, or heavy), so a heavy generation can reach several million tokens. The class — assigned at <code>flow-init</code> — sets the whole dispatch envelope: population width, model tier per generator bias, evaluator depth, and mandatory per-variant and per-generation token budgets that the orchestrator enforces at dispatch. Light-class efforts keep a real population (three cheap-tier variants) because independent spec readings are the population's diagnostic value; the cost cut comes from model tier and protocol depth, not width. On bounded problems with clear eval surfaces, the decision-quality gain pays for it. See <code>context/flow-dispatch-rules.md</code> for the tier tables and guardrails.</p>
 
 <h3 id="consistent-comms">Consistent comms via spec projection <a class="anchor" href="#consistent-comms" aria-label="Permalink">#</a></h3>
 
-<p><code>delivery-team</code>'s Stage 5 launches Marketing, GTM, and CX/Support agents in parallel to produce launch artifacts. Each rediscovers the spec delta independently. <code>flow-narrator</code> reads <code>git diff(spec_N, spec_N+1)</code> once and projects it into every audience tier — changelog, sales talking points, support doc, marketing brief — at the same time, from the same source. Consistency is structural, not editorial.</p>
+<p><code>delivery-team</code>'s Stage 5 launches Marketing, GTM, and CX/Support agents in parallel to produce launch artifacts. Each rediscovers the spec delta independently. <code>flow-narrator</code> reads the spec delta once and projects it into whichever audience tier is asked for, from the same source — changelog + ship record by default, wider tiers on request. Consistency is structural, not editorial.</p>
 
 <p>A spec amendment that adds rate limiting becomes a changelog entry, a sales note about "now supports controlled-burst customers," and a support doc on the new 429 status code. All derived. Never authored ad-hoc. Never out of sync with what shipped.</p>
 
@@ -599,7 +613,7 @@
 
 <h3 id="no-close-ceremony">No close ceremony, no false closure <a class="anchor" href="#no-close-ceremony" aria-label="Permalink">#</a></h3>
 
-<p><code>delivery-team</code> runs <code>dt-close</code> at the end of every sprint, producing a summary and a retro. Sprints close on the calendar, even when the work hasn't reached a natural stopping point. <code>flow</code> has no <code>flow-close</code> and no <code>flow-retro</code>. An effort transitions to <code>shipped/</code> when convergence is reached or a metastable variant is selected. The retro function is absorbed into the cull cycle — every generation produces a diff between predicted and actual eval scores, so learning becomes structural rather than ceremonial.</p>
+<p><code>delivery-team</code> runs <code>dt-close</code> at the end of every sprint, producing a summary and a retro. Sprints close on the calendar, even when the work hasn't reached a natural stopping point. <code>flow</code> has no <code>flow-close</code> and no <code>flow-retro</code>. An effort transitions to <code>shipped/</code> when a variant passes the ship gate — clean, or gated with watches armed. The retro function is absorbed into the cull cycle — every generation produces a diff between predicted and actual eval scores, so learning becomes structural rather than ceremonial.</p>
 
 <p>Most "close" rituals manufacture closure on work that should remain open, and re-open it implicitly the next sprint. <code>flow</code> doesn't manufacture closure.</p>
 
@@ -608,14 +622,14 @@
 <p>Five things <code>flow</code> deliberately omits. Each absence is research-flagged.</p>
 
 <ul>
-  <li><strong>No parallel writes.</strong> Generators run in parallel but write only to their own variant directories. Only <code>flow-converge</code> promotes a single survivor to the working tree.</li>
+  <li><strong>No parallel writes.</strong> Generators run in parallel but write only to their own variant directories. Only <code>flow-ship</code> promotes a single survivor to the working tree.</li>
   <li><strong>No purely evolutionary search.</strong> AlphaEvolve works on well-defined computable objectives. Product work is partially open-ended. Variants exist within spec-bounded constraint space, not free generation.</li>
   <li><strong>No automated metric optimization without HITL.</strong> Goodhart's law is real. The human preference-articulator role is non-optional for spec evolution and eval design.</li>
   <li><strong>No spec-as-source maturity at v1.</strong> <code>flow</code> ships at Fowler's level 2 (spec-anchored): specs are primary, code is regenerated on spec change, but legacy paths can be edited directly when conformance tests are intact. Level 3 — spec-only edits — is a future state.</li>
   <li><strong>No full elimination of role narrative.</strong> Generators get constraint variation (one biased for performance, another for simplicity) but the underlying agent is the same function. Niche differentiation is a runtime parameter, not an identity.</li>
 </ul>
 
-<h2 id="when-to-use">When to use flow, when to stay on delivery-team <a class="anchor" href="#when-to-use" aria-label="Permalink">#</a></h2>
+<h2 id="when-to-use">When to use flow, when to use a lighter mode <a class="anchor" href="#when-to-use" aria-label="Permalink">#</a></h2>
 
 <p><code>flow</code> is the right tool when:</p>
 <ul>
@@ -625,18 +639,19 @@
   <li>You want population-search decision quality and are willing to pay the token cost.</li>
 </ul>
 
-<p>Stay on <code>delivery-team</code> when:</p>
+<p>Use spec-only / spec + eval mode, a conventional session, or <code>delivery-team</code> when:</p>
 <ul>
   <li>The spec genuinely cannot be written precisely (exploratory research, brand-new product surface).</li>
+  <li>One obvious implementation exists and independent readings could not meaningfully disagree.</li>
   <li>Stakeholders need Scrum vocabulary for organizational legibility.</li>
   <li>External dependencies dominate the schedule and population search adds no signal.</li>
 </ul>
 
-<p>The <code>flow</code> constitution includes an explicit escape hatch: if spec confidence drops below threshold, drop to <code>delivery-team</code> story mode. The two suites are not exclusive.</p>
+<p>The explicit escape hatch: if spec confidence drops below threshold, drop out of the machine — <code>delivery-team</code> story mode, a conventional session, or spec-only mode if the requirements are still worth recording. The mode gate runs both ways.</p>
 
 <h2 id="how-to-use-it">How to use it <a class="anchor" href="#how-to-use-it" aria-label="Permalink">#</a></h2>
 
-<p>The lifecycle is six phases. Skills are user-invoked slash commands; agents are background functions skills dispatch (e.g., <code>flow-init</code> dispatches <code>flow-spec-writer</code>, <code>flow-evaluator</code>, and <code>flow-context-curator</code>). You invoke skills. The orchestrator decides which agents to spawn.</p>
+<p>The lifecycle follows the doctrine spine: <strong>spec → panel → one wide probe generation → cull → chavruta → ship with controls → probe and rule post-ship → narrow redispatch only on evidence.</strong> Skills are user-invoked slash commands; agents are background functions skills dispatch (e.g., <code>flow-init</code> dispatches <code>flow-spec-writer</code> and <code>flow-evaluator</code>). You invoke skills. The orchestrator decides which agents to spawn.</p>
 
 <h3 id="prerequisites">Prerequisites <a class="anchor" href="#prerequisites" aria-label="Permalink">#</a></h3>
 
@@ -655,14 +670,14 @@
 
 <pre><code>/flow-init &lt;effort-slug&gt; [--from-spec &lt;path&gt;] [--from-delivery-team &lt;effort&gt;]</code></pre>
 
-<p><code>flow-init</code> bootstraps the directory structure. It asks for a purpose paragraph, the codebase path, your HITL mode, any hard prohibitions, and the starting temperature. It also proposes a <strong>weight class</strong> (light | standard | heavy) from the effort's signals — scope size, blast radius, whether the work is security-bearing (always heavy), novel architecture versus a port — and confirms it with you along with the token budgets it implies, in plain terms you can veto. It then writes:</p>
+<p><code>flow-init</code> first applies the mode gate — if the scope doesn't warrant full flow, it says so and proposes spec-only or spec + eval instead. For a full-flow effort it asks for a purpose paragraph, the codebase path, your HITL mode, any hard prohibitions, the artifact's real consumers (for the cross-boundary objective), and the <strong>weight class</strong> (light | standard | heavy) with the token budgets it implies, in plain terms you can veto. It then writes:</p>
 
 <ul>
   <li><code>spec/spec.md</code> — initial EARS-formatted executable spec (may be skeletal)</li>
-  <li><code>spec/constitution.md</code> — governance: prohibitions, preferences, escalation triggers, plus the weight class and the mandatory <code>token-budget-per-variant</code> / <code>token-budget-per-generation</code> fields</li>
-  <li><code>evals/harness.yaml</code> — eval suite scaffolded with six default dimensions (correctness, performance, maintainability, accessibility, security, cost)</li>
-  <li><code>efforts/{slug}/flow-state.yaml</code> — convergence score, temperature, WIP spread, Pareto front, active dissents</li>
-  <li><code>.flow-index/</code> — codebase index for context curation</li>
+  <li><code>spec/constitution.md</code> — governance: prohibitions, preferences, escalation triggers, weight class, budgets</li>
+  <li><code>evals/harness.yaml</code> — eval suite scaffolded with the default dimensions plus the two non-negotiables: dedicated invariant graders and at least one cross-boundary objective</li>
+  <li><code>efforts/{slug}/flow-state.yaml</code> — WIP spread, Pareto front, active dissents, spend tracking</li>
+  <li><code>.flow-index/</code> — codebase index for context curation (heavy-class efforts)</li>
 </ul>
 
 <p>Flags: <code>--from-spec &lt;path&gt;</code> ingests an existing PRD as the spec seed; <code>--from-delivery-team &lt;effort&gt;</code> migrates from a prior sprint-shaped effort.</p>
@@ -671,59 +686,58 @@
 
 <h3 id="phase-2" class="phase">Phase 2 — Evolve the spec <a class="anchor" href="#phase-2" aria-label="Permalink">#</a></h3>
 
-<pre><code>/flow-spec &lt;natural-language intent or "amend SR-NNN ..."&gt; | --restructure | --constitution | --panel [SR-IDs]</code></pre>
+<pre><code>/flow-spec &lt;natural-language intent or "amend SR-NNN ..."&gt; | --restructure | --constitution</code></pre>
 
-<p>Any time intent changes, route it through <code>flow-spec</code>. It refuses vague natural language: user journeys become GWT scenarios (<code>SCN-{NNN}</code>), and non-functional intents become derived EARS requirements (<code>SR-{NNN}</code>). It versions <code>spec/spec.md</code>, writes an entry in <code>spec/history/</code>, and triggers a dissent reactivation check — a spec change may match an archived dissent's condition.</p>
+<p>Any time intent changes, route it through <code>flow-spec</code>. It refuses vague natural language: user journeys become GWT scenarios (<code>SCN-{NNN}</code>), and non-functional intents become derived EARS requirements (<code>SR-{NNN}</code>). It versions <code>spec/spec.md</code>, writes an entry in <code>spec/history/</code>, and triggers a dissent reactivation check — a spec change may match an archived dissent's condition. Every semantic spec round closes with the interpretation panel (Phase 4); pure-ratification rounds pay for neither a panel nor a generation.</p>
 
 <p><code>--restructure</code> groups SRs without changing semantics. <code>--constitution</code> amends <code>spec/constitution.md</code> — prohibitions, preferences, escalation triggers, dispatch overrides — which is the only sanctioned way to change governance after init.</p>
-
-<p><code>--panel</code> runs the <strong>interpretation panel</strong>, a cheap pre-generation spec probe: 3–5 parallel readers each independently commit to an interpretation of the in-scope requirements, the decision points where the text admits two readings, and an interface-level sketch — ~5–8k tokens each, versus ~400k per implementation. Divergent readings locate spec ambiguity <em>before</em> any generator runs; each divergence becomes a proposed amendment. Recommended before every first generation.</p>
 
 <p>The spec is the contract every downstream skill assumes. Skip <code>flow-spec</code> and edit requirements ad-hoc, and the chain breaks silently.</p>
 
 <h3 id="phase-3" class="phase">Phase 3 — Author the eval suite <a class="anchor" href="#phase-3" aria-label="Permalink">#</a></h3>
 
-<pre><code>/flow-eval [dimension-name] | --add-dataset &lt;dim&gt; &lt;path&gt; | --refine &lt;grader&gt; | --threshold &lt;dim&gt; &lt;value&gt;</code></pre>
+<pre><code>/flow-eval [dimension-name] | --add-dataset &lt;dim&gt; &lt;path&gt; | --refine &lt;grader&gt; | --threshold &lt;dim&gt; &lt;value&gt; | --characterize &lt;dim&gt;</code></pre>
 
-<p><code>flow-eval</code> populates the per-dimension datasets and graders. Each dimension needs at least one real-world dataset; correctness and security additionally require an adversarial holdout (Goodhart mitigation). Run with no arguments for an interactive walk through the suite. Use the targeted flags to add datasets, refine graders, or adjust thresholds.</p>
+<p><code>flow-eval</code> populates the per-dimension datasets and graders. Each dimension needs at least one real-world dataset; correctness and security additionally require an adversarial holdout (Goodhart mitigation). Two outputs are non-negotiable before the first cull: dedicated invariant graders and at least one cross-boundary objective. <code>--characterize</code> records a grader's score variance so culls can treat within-noise deltas as ties.</p>
 
-<p>Evals are a first-class versioned artifact. They aren't a test harness — they're the executable half of the spec contract.</p>
+<p>Evals are a first-class versioned artifact — and the priority target for spend. Depth is tiered: quick during rounds, deep exactly once at pre-ship, adversarial only on gating dimensions. Measure one judge before spawning a fleet.</p>
 
-<h3 id="phase-4" class="phase">Phase 4 — Generate and cull <a class="anchor" href="#phase-4" aria-label="Permalink">#</a></h3>
+<h3 id="phase-4" class="phase">Phase 4 — Panel: probe the spec before building <a class="anchor" href="#phase-4" aria-label="Permalink">#</a></h3>
+
+<pre><code>/flow-panel [scope SR-IDs] [--readers &lt;3-5&gt;]</code></pre>
+
+<p>Three to five cheap readers independently commit to readings of the spec slice; the diff of their readings locates ambiguity at ~5–8k tokens per reader instead of ~400k per implementation. Divergences route back to <code>/flow-spec</code> as amendments. <code>flow-generate</code> won't dispatch gen-1 without a panel record. In spec-only mode, this is where the machine stops — build conventionally from the paneled spec.</p>
+
+<h3 id="phase-5" class="phase">Phase 5 — One wide probe generation, then cull <a class="anchor" href="#phase-5" aria-label="Permalink">#</a></h3>
 
 <pre><code>/flow-generate [scope SR-IDs or "all"] [--hotfix] [--N &lt;count&gt;]
 /flow-cull     [--depth quick|standard|deep|adversarial]</code></pre>
 
-<p><code>flow-generate</code> dispatches generator agents in parallel. Population size comes from the effort's weight-class envelope — light 3 (cheap tier), standard 3–5, heavy 5–7, with a hard ceiling of 10 — refined by the <em>in-scope delta</em> (how many requirements this generation actually touches, not the spec's total size), plateau state, and temperature. <code>--hotfix</code> bypasses population search entirely and serializes a single variant. <code>--N</code> overrides the orchestrator's choice. Each generator gets a distinct constraint bias (<code>simplicity</code>, <code>performance</code>, <code>maintainability</code>, <code>security</code>, <code>convention</code>, plus <code>radical</code> at high temperatures), a model tier assigned per class and bias, its per-variant token budget as a working constraint in the prompt, and writes to its own variant directory under <code>efforts/{slug}/generations/gen-{N}/population/</code>.</p>
+<p><code>flow-generate</code> dispatches the <strong>wide probe</strong>: 5–7 parallel generators on heavy/novel scope, 3 on standard, 3 cheap-tier on light. Each gets a distinct constraint bias (default rotation: <code>maintainability</code>, <code>simplicity</code>, <code>convention</code>, plus <code>security</code> when scope warrants), a model tier assigned per class and bias, its per-variant token budget, and writes to its own variant directory under <code>efforts/{slug}/generations/gen-{N}/population/</code>. The population is a spec probe — its decision ledgers and forks are primary output, not just its scores. <code>--hotfix</code> bypasses population search entirely and serializes a single variant with a mandatory decision ledger + audit.</p>
 
-<p>Every generator also maintains a <strong>decision ledger</strong> in its variant directory: one severity-tagged entry per point where the spec admitted two readings, with the reading chosen and what the alternative would have produced. The evaluator audits the ledgers — for each entry, "would the eval suite detect the difference?" — and HIGH-severity entries escalate to the human. On the single-variant hotfix path the ledger plus its audit is the only spec probe there is, so it's mandatory there.</p>
+<p>Every generator maintains a <strong>decision ledger</strong> in its variant directory: one severity-tagged entry per point where the spec admitted two readings, with the reading chosen and what the alternative would have produced. The evaluator audits the ledgers — for each entry, "would the eval suite detect the difference?" — and HIGH-severity entries escalate to the human.</p>
 
-<p><code>flow-cull</code> runs the eval suite against each variant, computes the Pareto front, archives strictly-dominated variants, and flags any metastable candidates — stable intermediate states with partial spec proximity that are first-class ship candidates, not WIP. The <code>--depth</code> flag controls eval depth; <code>adversarial</code> runs the Goodhart-detection passes.</p>
+<p><code>flow-cull</code> runs the eval suite against each variant (quick depth), computes the Pareto front with a noise floor (within-variance deltas are ties; saturated dimensions don't rank), archives strictly-dominated variants, and flags gated-ship (metastable) candidates. <strong>The cull close is the checkpoint</strong>: chavruta and the ship decision follow immediately.</p>
 
-<h3 id="phase-5" class="phase">Phase 5 — Converge or anneal <a class="anchor" href="#phase-5" aria-label="Permalink">#</a></h3>
-
-<pre><code>/flow-converge [--force-ship | --force-iterate]
-/flow-anneal   heat | cool | reset | --to &lt;0.0-1.0&gt; | --status</code></pre>
-
-<p><code>flow-converge</code> checks two signals: inter-variant similarity (have the survivors converged on a solution shape?) and Pareto-front stability (are the dimension scores still climbing?). If converged, it triggers <code>flow-chavruta</code> and prepares to ship. If not, it advances to gen N+1. The <code>--force-*</code> flags override the recommendation when the operator has out-of-band judgment.</p>
-
-<p><code>flow-anneal</code> adjusts the temperature parameter. When the front plateaus across two generations without progress, <code>heat</code> widens exploration and forces constraint-variation divergence. Cool it back down as convergence reapproaches. Reheating triggers — eval plateau, architectural blocker, dissent reactivation cluster — fire automatically; this skill is the manual override.</p>
-
-<h3 id="phase-6" class="phase">Phase 6 — Review, ship, monitor <a class="anchor" href="#phase-6" aria-label="Permalink">#</a></h3>
+<h3 id="phase-6" class="phase">Phase 6 — Review, ship with controls <a class="anchor" href="#phase-6" aria-label="Permalink">#</a></h3>
 
 <pre><code>/flow-chavruta [variant-id | "spec-change" | "metastable"]
-/flow-ship     &lt;variant-id&gt; | --metastable | --rollback &lt;ship-id&gt;</code></pre>
+/flow-ship     &lt;variant-id&gt; | --gated | --rollback &lt;ship-id&gt;</code></pre>
 
-<p><code>flow-chavruta</code> runs the stability-bias and velocity-bias reviewers against the survivor. <strong>Their disagreement is the deliverable.</strong> The review exits at documented disagreement with provisional resolution and explicit reactivation conditions — not at consensus. Dissents append to <code>dissents-active.yaml</code>.</p>
+<p><code>flow-chavruta</code> runs the stability-bias and velocity-bias reviewers against the survivor. <strong>Their disagreement is the deliverable.</strong> The review exits at documented disagreement with provisional resolution and explicit reactivation conditions — not at consensus. Dissents append to <code>dissents-active.yaml</code>. In the field trial this layer changed shipped code in every repo — best value per token in the system.</p>
 
-<p><code>flow-ship</code> promotes the variant to the working tree, runs progressive rollout via feature flags, and invokes <code>flow-narrator</code> to derive audience-tiered comms from the spec delta. <code>--metastable</code> ships a stable intermediate state that doesn't yet hit every threshold but is valuable as-is. <code>--rollback</code> reverts a prior ship by ID. Post-ship, the eval-front continues running in production.</p>
+<p><code>flow-ship</code> owns the ship gate: named qualitative grounds (never a scalar), one deep eval pass, decision-ledger audit, a <strong>fired revert probe</strong> (the rollback path demonstrated, not assumed), and pre-registered post-ship watches. Then it promotes the variant to the working tree, plans progressive rollout via feature flags, and derives the slim comms bundle (changelog + ship record). <code>--gated</code> ships a stable partial-coverage state behind flags with the gaps disclosed and watched. <code>--rollback</code> reverts a prior ship by ID.</p>
+
+<h3 id="phase-7" class="phase">Phase 7 — Post-ship: probe and rule, redispatch only on evidence <a class="anchor" href="#phase-7" aria-label="Permalink">#</a></h3>
+
+<p>Post-ship work is spec-side and probe-side — rulings, remedy PRs, probes — with <strong>zero new generations by default</strong>. A new generation needs named evidence: a fired watch, a fork the evals can't discriminate, or a spec delta needing implementation. Then <code>/flow-generate</code> dispatches N=1–2 grafting from the shipped variant. Scheduled or confirmation generations are forbidden — the trial priced them at full cost for near-zero movement.</p>
 
 <h3 id="cross-cutting" class="phase">Cross-cutting skills <a class="anchor" href="#cross-cutting" aria-label="Permalink">#</a></h3>
 
 <p>These aren't phase-bound. Invoke any time:</p>
 
 <ul>
-  <li><code>/flow-pulse [--comms | --verbose | --json]</code> — read-only state report: convergence score, Pareto front, temperature, WIP spread, active dissents, and last-generation spend (estimated vs. observed). The single status command. No sprint velocity. <code>--comms</code> projects the current spec-delta into audience-tiered comms on demand.</li>
+  <li><code>/flow-pulse [--comms | --verbose | --json]</code> — read-only state report: Pareto front, ship-gate status, watches, WIP, active dissents. The single status command; a convenience and resume aid, not a decision instrument. <code>--comms</code> shows the comms state for the latest ship.</li>
   <li><code>/flow-dissent --list-active | --list-reactivated | --check | acknowledge &lt;id&gt; | mitigate &lt;id&gt; --commit &lt;sha&gt; | resolve &lt;id&gt; --reason &lt;text&gt;</code> — query the registry, run a manual reactivation check, or take action on a surfaced dissent.</li>
 </ul>
 
@@ -731,20 +745,20 @@
 
 <h2 id="walkthrough">A walkthrough sketch <a class="anchor" href="#walkthrough" aria-label="Permalink">#</a></h2>
 
-<p>Illustrative, not a script. A first effort using <code>flow</code> typically runs three to four generations before convergence. Rough shape:</p>
+<p>Illustrative, not a script. A typical full-flow effort ships from its <strong>first</strong> generation. Rough shape:</p>
 
 <ol>
-  <li><strong>Init.</strong> <code>/flow-init customer-portal-rewrite</code> with a purpose paragraph and the codebase path. Skeletal spec with 3–5 SRs. Standard weight class confirmed with its budgets; default temperature 0.5.</li>
+  <li><strong>Init.</strong> <code>/flow-init customer-portal-rewrite</code> with a purpose paragraph, the codebase path, and the artifact's real consumers. Mode gate confirms full flow is warranted. Skeletal spec with 3–5 SRs; weight class standard.</li>
   <li><strong>Spec authoring.</strong> Two or three <code>/flow-spec</code> passes to firm up the GWT scenarios and their derived EARS requirements. HITL counter-prompts vague NL into testable form.</li>
-  <li><strong>Eval bootstrapping.</strong> <code>/flow-eval</code> populates the datasets. Correctness and security get adversarial holdouts.</li>
-  <li><strong>Gen 1.</strong> <code>/flow-spec --panel</code> surfaces one ambiguity; the spec is amended. <code>/flow-generate</code> spawns 5 variants. <code>/flow-cull</code> reveals two on the Pareto front, three dominated. <code>/flow-converge</code> says no — inter-variant similarity is low.</li>
-  <li><strong>Gen 2.</strong> Generators re-run against the spec, biased by the gen-1 front. Similarity rises but the maintainability dimension plateaus.</li>
-  <li><strong>Reheat.</strong> <code>/flow-anneal heat</code>. A new constraint-bias is seeded.</li>
-  <li><strong>Gen 3.</strong> Survivors converge. Pareto front is stable. <code>/flow-chavruta</code> runs and produces one dissent — stability reviewer flags a load-spike condition.</li>
-  <li><strong>Ship.</strong> <code>/flow-ship</code> promotes the survivor, flags it behind a percentage rollout, and <code>flow-narrator</code> projects the spec delta into the changelog, sales note, and support doc.</li>
+  <li><strong>Eval bootstrapping.</strong> <code>/flow-eval</code> populates the datasets, authors the invariant graders, and wires a cross-boundary objective against the named consumers.</li>
+  <li><strong>Panel.</strong> <code>/flow-panel</code> spawns 3 readers. They split two ways on SR-007's retry scope — <code>/flow-spec amend</code> closes the fork before a single implementation token is spent.</li>
+  <li><strong>The wide probe.</strong> <code>/flow-generate</code> spawns 3 variants (maintainability, simplicity, convention). <code>/flow-cull</code> at quick depth reveals two on the Pareto front, one dominated; one maintainability delta is inside the noise floor and named a tie; a decision-ledger fork the suite can't discriminate is routed to <code>/flow-eval</code> as a suite gap.</li>
+  <li><strong>Checkpoint.</strong> The cull close invokes <code>/flow-chavruta</code> — one dissent recorded (stability reviewer flags a load-spike condition), non-blocking, reactivation conditions armed.</li>
+  <li><strong>Ship.</strong> <code>/flow-ship var-2</code> walks the gate: grounds named, deep eval pass, ledger audit, revert probe fired in a scratch worktree, watches registered. Variant promoted behind a percentage rollout; changelog + ship record generated.</li>
+  <li><strong>Post-ship.</strong> Two weeks of rulings and remedy PRs, zero new generations. Then the load-spike watch fires — <code>/flow-generate SR-007</code> dispatches N=2 grafting from the shipped variant, with the fired watch as recorded evidence.</li>
 </ol>
 
-<p>The whole cycle is convergence-bound. No sprint number on any of these artifacts.</p>
+<p>The whole cycle is evidence-bound. No sprint number on any of these artifacts — and no scheduled generation, ever.</p>
 
 <h2 id="state">State at a glance <a class="anchor" href="#state" aria-label="Permalink">#</a></h2>
 
@@ -756,10 +770,9 @@
   </thead>
   <tbody>
     <tr><td><code>current-generation</code></td><td>The active generation number</td></tr>
-    <tr><td><code>convergence-score</code></td><td>0..1; ship threshold is 0.85 by default</td></tr>
-    <tr><td><code>temperature</code></td><td>0..1; 1.0 = full explore, 0.0 = full exploit</td></tr>
     <tr><td><code>wip-spread</code></td><td>Admission cost for new work items (price signal, not cap)</td></tr>
     <tr><td><code>pareto-front</code></td><td>Best score per dimension across the current generation</td></tr>
+    <tr><td><code>metastable-candidates</code></td><td>Variants qualifying for a gated ship (stable, partial coverage)</td></tr>
     <tr><td><code>active-dissents</code></td><td>Count; full records in <code>dissents-active.yaml</code></td></tr>
     <tr><td><code>dispatch.weight-class</code></td><td><code>light</code> / <code>standard</code> / <code>heavy</code>; sets the dispatch envelope (mirrors the constitution)</td></tr>
     <tr><td><code>spend.last-generation</code></td><td>Estimated vs. observed tokens for the last generation, with a precision tag</td></tr>
@@ -767,13 +780,15 @@
   </tbody>
 </table>
 
+<p>(Schema 1.0's <code>convergence-score</code> and <code>temperature</code> fields are retired — ship readiness is <code>flow-ship</code>'s gate checklist, not a scalar.)</p>
+
 <p><code>/flow-pulse</code> reads this file and prints a human-readable summary.</p>
 
 <h2 id="validating">Validating that flow is working <a class="anchor" href="#validating" aria-label="Permalink">#</a></h2>
 
 <p>The suite is opinionated. It should be testable.</p>
 
-<p><code>README.md</code> lists the six-metric A/B harness — three velocity dimensions (wall-clock, token spend, human review burden) and three quality dimensions (eval-front coverage, defect rate at +14 days, comprehension cost at +7 days) — along with the decision rule and the tie back to the research source. Run the comparison head-to-head against <code>delivery-team</code> on a single effort. Use the data, not intuition, to decide whether to keep going.</p>
+<p><code>README.md</code> lists the six-metric A/B harness — three velocity dimensions (wall-clock, token spend, human review burden) and three quality dimensions (eval-front coverage, defect rate at +14 days, comprehension cost at +7 days) — along with the decision rule. The 2026-07-28 → 2026-08-10 field trial already ran this test at scale (7 efforts, ~37 generations, ~144 variants, 16 ships, with a conventional control) — its verdict is what the operating doctrine encodes. For future validation, watch the doctrine's own instruments: did the panel catch forks before generation, did sibling disagreement surface defects the suites missed, did any post-ship watch fire on something the gate should have caught. Use the data, not intuition.</p>
 
 <p>Two limits worth naming up front. Fourteen days is too short to measure long-term comprehension debt. The dissent registry's value is cumulative — it won't show up until effort five or six. Plan a re-measurement at 90 days and across multiple efforts before drawing firm conclusions.</p>
 

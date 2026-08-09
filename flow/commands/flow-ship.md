@@ -1,6 +1,6 @@
 ---
-description: Release a converged or metastable variant. Promote to working tree, progressive rollout via flags, audience-tiered comms derived from spec delta, post-ship eval monitoring.
-argument-hint: <variant-id> | --metastable | --rollback <ship-id>
+description: Release a variant through the ship gate — named qualitative grounds, deep eval pass, ledger audit, a FIRED revert probe, and pre-registered watches. Promote to working tree, progressive rollout via flags, changelog + ship record derived from spec delta.
+argument-hint: <variant-id> | --gated (alias --metastable) | --rollback <ship-id>
 model: opus
 allowed-tools:
   - Read
@@ -15,8 +15,8 @@ capability-class: deploy
 tier: I
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-philosophy, flow-spec-protocol, flow-operator-voice, vault-access]
-  upstream-skills: [flow-converge, flow-chavruta]
+  requires-context: [flow-state-model, flow-philosophy, flow-spec-protocol, flow-operating-doctrine, flow-operator-voice, vault-access]
+  upstream-skills: [flow-cull, flow-chavruta]
   downstream-skills: []
   compatible-agents: [flow-orchestrator, flow-narrator, flow-evaluator]
 readiness:
@@ -36,17 +36,20 @@ Read context files:
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-philosophy.md`
 - `~/.claude/commands/context/flow-spec-protocol.md`
+- `~/.claude/commands/context/flow-operating-doctrine.md`
 - `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
 
-Release a variant to production. Replaces five delivery-team skills (`dt-release-plan`, `dt-readiness-gate`, `dt-release`, `dt-release-comms`, `dt-release-monitor`) with a single consolidated ship operation. Comms are derived continuously from spec deltas (no readiness handoff stage); progressive rollout uses feature flags; post-ship eval continues running.
+Release a variant to production. This skill **owns the ship gate** (doctrine §Ship gate): the decision to ship is made here, on named qualitative grounds with compensating controls — never on a scalar. There is no upstream convergence check; the cull close hands the decision straight to this gate. Comms are slim by default (changelog + ship record); progressive rollout uses feature flags; pre-registered watches monitor post-ship.
+
+Ship kinds are **clean** (full in-scope coverage) or **gated** (partial coverage or waived checks, behind flags, deferred SRs disclosed, watches armed).
 
 ## Inputs
 
-- **variant-id** — required, the variant to ship (typically chosen by `/flow-converge`)
-- `--metastable` — explicitly ship as metastable / partial-completion release with deferred SRs disclosed
+- **variant-id** — required, the variant to ship (the survivor surfaced at `/flow-cull`'s close)
+- `--gated` (alias: `--metastable`) — explicitly ship as a gated / partial-completion release with deferred SRs disclosed
 - `--rollback <ship-id>` — revert a prior ship; restore working tree and feature-flag state to pre-ship
 
 ## Procedure
@@ -59,15 +62,21 @@ Release a variant to production. Replaces five delivery-team skills (`dt-release
 - `spec/spec.md` and `spec/history/spec-v{N}.md` — current spec for narrator projection
 - `spec/constitution.md` — release prohibitions, ring policy if defined
 
-### Step 2: Pre-ship validation
+### Step 2: The ship gate
 
-- Variant exists and has a recent eval-result
-- No blocking dissents (those flagged as blocking by chavruta must be acknowledged/mitigated/resolved first)
-- Invariants pass on this variant
-- Convergence-score meets ship threshold (or metastable flag set)
-- HITL `preference-articulator` mode requires explicit user approval
+A ship is justified by this checklist, not a score (doctrine §Ship gate — the compensating controls that replaced the retired convergence criterion):
 
-If any check fails: halt and surface the gap.
+1. **Named qualitative grounds** — what this variant does that the alternatives don't, in behavior terms. Written before anything else; goes verbatim into the ship record. "Highest weighted scalar" is not grounds.
+2. **Invariants pass** on this variant.
+3. **No blocking dissents** — those flagged blocking by chavruta must be acknowledged/mitigated/resolved first.
+4. **Chavruta has run since the last cull.** If not, run `/flow-chavruta` now — the paired adversarial review is the checkpoint.
+5. **One deep eval pass** on this variant — the single deep run the eval tiering budget allows (rounds run quick; this is where deep lives).
+6. **Decision-ledger audit complete** — suite-gap findings addressed via `/flow-eval` or explicitly accepted with rationale.
+7. **A FIRED revert probe** — compute the reverse diff and apply it cleanly somewhere disposable (scratch worktree). A rollback path that has never fired is an assumption, not a control.
+8. **Pre-registered post-ship watches** — the specific regressions and dissent reactivation conditions that would trigger action, written into the ship record before promotion.
+9. **HITL approval** — always preference-articulator for ship.
+
+Gated ships additionally disclose exactly which SRs are deferred. If any check fails: halt and surface the gap.
 
 ### Step 3: Generate ship-record-id
 
@@ -87,7 +96,7 @@ Operationally:
 3. Verify checksum / re-read to confirm
 4. **Do not commit yet** — the user (or downstream CI) commits
 
-### Step 5: Generate comms artifacts
+### Step 5: Generate comms artifacts (slim by default)
 
 Launch `~/.claude/commands/agents/flow-narrator.md` subagent (model: opus) with:
 - Spec version being shipped
@@ -96,12 +105,9 @@ Launch `~/.claude/commands/agents/flow-narrator.md` subagent (model: opus) with:
 
 Narrator writes to `efforts/{effort}/shipped/{ship-record-id}/comms/`:
 - `changelog.md`
-- `internal-changelog.md`
-- `sponsor-comms-{customer}.md` (one per sponsor in constitution)
-- `GA-comms.md`
-- `sales-brief.md`
-- `support-doc.md`
-- `marketing-brief.md`
+- `internal-changelog.md` (doubles as the human-readable ship narrative)
+
+That is the default bundle — the field trial produced eight full comms bundles with zero inbound references. The wider tiers (sponsor comms, GA comms, sales brief, support doc, marketing brief) are generated **only on explicit operator request**, per audience, never automatically.
 
 ### Step 6: Progressive rollout plan
 
@@ -139,14 +145,14 @@ Write `efforts/{effort}/shipped/{ship-record-id}/rollout-plan.yaml` with the pla
 
 If the project uses feature flags, write a `feature-flags.yaml` snippet referencing the new flag(s). The actual flag platform integration is project-specific; the artifact is generated as documentation.
 
-### Step 8: Post-ship eval
+### Step 8: Arm the post-ship watches
 
-Continuous eval continues running. Configure in `efforts/{effort}/shipped/{ship-record-id}/post-ship-eval/`:
-- Same eval suite as pre-ship
-- Production data feeds in (instrumented via constitution-defined integration)
-- Anomaly threshold: if any dimension regresses by >0.10 from pre-ship score, surface as alert
+Write the pre-registered watches (gate item 8) to `efforts/{effort}/shipped/{ship-record-id}/post-ship-eval/watches.yaml`:
+- Each watch: the specific regression or condition, how it is observed, and what firing triggers (rollback, ruling, remedy PR, or narrow redispatch)
+- Dissent reactivation conditions in scope stay armed alongside
+- Anomaly default: any dimension regressing >0.10 from the pre-ship deep pass surfaces as an alert
 
-This skill produces the configuration; the running of post-ship eval is the project's CI/CD or `flow-orchestrator` cron.
+This skill produces the configuration; observing the watches is the project's CI/CD, `flow-dissent-monitor`, or the operator. **A fired watch is the doctrine's licensed trigger for a new generation** — post-ship work is otherwise spec-side and probe-side (rulings, remedy PRs, probes), zero new generations by default.
 
 ### Step 9: Write ship record
 
@@ -158,11 +164,26 @@ This skill produces the configuration; the running of post-ship eval is the proj
 **Variant**: gen-{N}/population/{variant-id}
 **Constraint bias**: {bias}
 **Spec version**: v{spec-version}
-**Ship kind**: full | metastable
-**Convergence-score at ship**: {score}
+**Ship kind**: clean | gated
 **HITL approval**: {user, timestamp}
 
-## Pareto-front scores at ship
+## Grounds for ship
+
+{The named qualitative grounds from gate item 1, verbatim — what this variant does
+that the alternatives don't, in behavior terms. Never a scalar.}
+
+## Revert probe
+
+**Fired**: {ISO8601} in {scratch worktree path} — reverse diff applied cleanly: yes/no
+{any caveats}
+
+## Post-ship watches (pre-registered)
+
+| Watch | Observed via | Fires → |
+|-------|--------------|---------|
+| {regression/condition} | {mechanism} | {rollback / ruling / remedy PR / narrow redispatch} |
+
+## Pareto-front scores at ship (context, not grounds)
 
 | Dimension | Score |
 |-----------|-------|
@@ -176,7 +197,7 @@ This skill produces the configuration; the running of post-ship eval is the proj
 ## SRs covered
 
 - SR-001 through SR-019: passing
-- SR-020: deferred (metastable) — covered in next effort
+- SR-020: deferred (gated ship) — watch armed; covered on evidence
 - ...
 
 ## Active dissents at ship time
@@ -204,7 +225,7 @@ Generated in: `comms/` subdirectory.
 ### Step 10: Update state
 
 Write to `flow-state.yaml`:
-- `status`: `converged` if full ship; `in-flight` continues if metastable
+- `status`: `shipped` if clean; `in-flight` continues if gated (deferred SRs remain open)
 - `phase-log`: append ship record
 - `shipped` count incremented
 
@@ -221,13 +242,13 @@ These are constitution-configurable. By default, none happen automatically — t
 
 Return:
 - Ship-record-id
-- Variant shipped
+- Variant shipped + the named grounds
 - Spec version
-- Pareto-front summary
+- Revert-probe result + watches armed
 - Comms artifacts (paths)
 - Rollout plan summary
 - Active dissents at ship (with status)
-- Next-step suggestion: advance ring | monitor post-ship eval | start next effort
+- Next-step suggestion: advance ring | watch | start next effort (post-ship work is spec-side and probe-side unless a watch fires)
 
 ## Rollback mode
 
@@ -263,8 +284,8 @@ Rollback is **always** HITL preference-articulator mode regardless of effort def
 
 ## HITL surface
 
-- Always preference-articulator on ship (production deployment is **always** human-initiated per the philosophy carried over from delivery-team)
-- Metastable ship: confirm deferred SRs disclosure
+- Always preference-articulator on ship (production deployment is **always** human-initiated)
+- Gated ship: confirm deferred SRs disclosure
 - Active dissent blocking ship: prompt to resolve first or override-with-rationale
 - Rollback: full ship record displayed + confirmation
 
@@ -281,21 +302,21 @@ Not idempotent — re-running a ship creates a new ship-record-id with new times
 
 ## Examples
 
-### Standard ship after convergence
+### Clean ship after the first cull
 
 ```
 /flow-ship var-2
 ```
 
-After `/flow-converge` recommended var-2 (Pareto-front winner). HITL approval. Variant promoted. Comms generated. Rollout plan: ring 0 ships now, ring 1 awaits explicit advance.
+The cull close surfaced var-2 and chavruta ran. The gate walks its nine checks: grounds named ("only variant whose retry handling survives the SR-019 adversarial cases"), deep eval pass run, ledger audit clean, revert probe fired, watches registered. HITL approval. Variant promoted. Ring 0 ships now, ring 1 awaits explicit advance.
 
-### Metastable ship with deferred SRs
+### Gated ship with deferred SRs
 
 ```
-/flow-ship var-3 --metastable
+/flow-ship var-3 --gated
 ```
 
-Stability is high, spec proximity is partial. HITL confirms which SRs are deferred. Variant ships as feature-flagged early access; remaining SRs continue in future generations.
+Stability is high, spec proximity is partial (a metastable candidate from the cull). HITL confirms which SRs are deferred. Variant ships feature-flagged with watches armed on the deferred scope; remaining SRs are implemented on evidence, not on a schedule.
 
 ### Rollback
 

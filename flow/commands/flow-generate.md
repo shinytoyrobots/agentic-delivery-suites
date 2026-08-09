@@ -1,6 +1,6 @@
 ---
-description: Spawn a generation of N implementation variants. Orchestrator dispatches generators in parallel with constraint biases; each variant writes only to its own directory.
-argument-hint: '[scope SR-IDs or "all"] [--hotfix] [--N <count>] [--no-panel]'
+description: Spawn a generation of N implementation variants. Orchestrator dispatches generators in parallel with constraint biases; each variant writes only to its own directory. Default shape is ONE wide probe generation; refinement is N=1-2 + graft, on evidence only.
+argument-hint: '[scope SR-IDs or "all"] [--hotfix] [--N <count>]'
 model: opus
 allowed-tools:
   - Read
@@ -14,8 +14,8 @@ capability-class: build
 tier: II
 domain: [flow]
 works-with:
-  requires-context: [flow-state-model, flow-dispatch-rules, flow-spec-protocol, flow-philosophy, flow-operator-voice, vault-access]
-  upstream-skills: [flow-spec, flow-eval]
+  requires-context: [flow-state-model, flow-dispatch-rules, flow-spec-protocol, flow-philosophy, flow-operating-doctrine, flow-operator-voice, vault-access]
+  upstream-skills: [flow-spec, flow-eval, flow-panel]
   downstream-skills: [flow-cull]
   compatible-agents: [flow-orchestrator, flow-generator, flow-context-curator]
 readiness:
@@ -36,12 +36,13 @@ Read context files:
 - `~/.claude/commands/context/flow-dispatch-rules.md`
 - `~/.claude/commands/context/flow-spec-protocol.md`
 - `~/.claude/commands/context/flow-philosophy.md`
+- `~/.claude/commands/context/flow-operating-doctrine.md`
 - `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
 
-Produce a generation: N implementation variants of the spec, biased by different constraints, written to their own variant directories. Variants cover both the spec's GWT scenarios (SCN-{NNN}) and its EARS requirements (SR-{NNN}). This is the workhorse skill of `flow` — every implementation pass routes through here.
+Produce a generation: N implementation variants of the spec, biased by different constraints, written to their own variant directories. Variants cover both the spec's GWT scenarios (SCN-{NNN}) and its EARS requirements (SR-{NNN}). Every implementation pass routes through here — but under the operating doctrine the default run shape is **one wide probe generation** (the gen-1 population is the spec probe; harvest decision ledgers and forks as primary output, not just scores). Refinement generations default to **N=1–2 plus grafting from surviving variants**, dispatched only on evidence — a fired post-ship watch, a fork the evals can't discriminate, or a spec delta needing implementation. Never a scheduled or confirmation generation.
 
 ## Inputs
 
@@ -53,20 +54,19 @@ Produce a generation: N implementation variants of the spec, biased by different
 
 ### Step 1: Read state
 
-- `flow-state.yaml` — current generation, temperature, wip-spread
+- `flow-state.yaml` — current generation, wip-spread
 - `spec/spec.md` and `spec/constitution.md`
 - `dissents-active.yaml` — surface active dissents to generators
-- `evals/harness.yaml` — verify all in-scope SRs have conformance mappings
+- `evals/harness.yaml` — verify all in-scope SRs have conformance mappings, and that the doctrine's two non-negotiables hold: dedicated invariant graders exist, and at least one cross-boundary objective grades the artifact against its real consumers
 
 ### Step 2: Validate
 
 - All in-scope SRs have conformance mappings? If not, halt and suggest `/flow-eval` first.
+- Invariant graders authored, and a cross-boundary objective present? If not, halt and suggest `/flow-eval` — the doctrine forbids a first cull without them.
+- **Panel check** — a `spec/.staging/panel-*.md` record exists for the current spec version covering this scope? If not, halt and suggest `/flow-panel` first (~5–8k tokens per reader versus ~400k per implementation). The operator may explicitly override and dispatch unpaneled; record the override in the dispatch log.
+- **Evidence check (gen-N>1 only)** — read `flow-state.yaml.checkpoint.redispatch`. The cull close always resets it to `blocked`; dispatching requires naming the evidence — a fired post-ship watch, an eval-blind fork, or a spec delta needing implementation — and writing it into the field (`evidence:{kind}:{ref}`) and the dispatch log. `blocked` with no named evidence → halt; scheduled and confirmation generations are forbidden (doctrine step 7). If the state file predates the checkpoint block, the same rule applies with the evidence recorded in the dispatch log alone.
 - WIP spread < 0.6? If not, halt and surface saturation HITL.
 - Current generation directory exists? Increment to gen-{N+1}.
-
-### Step 2b: Interpretation panel (recommended for gen-1)
-
-For gen-1 (or any generation after a major spec change), offer the interpretation panel before dispatch unless the operator declines or `--no-panel` is passed: 3–5 cheap-tier readers independently commit to readings of the in-scope slice (`flow-dispatch-rules.md` §Interpretation panel; ~5–8k tokens each). Divergent readings are located spec ambiguity — surface them for `/flow-spec` amendment before spawning generators at ~400k per variant. Convergent readings: proceed, noting panel-clean in the dispatch log.
 
 ### Step 3: Dispatch decision
 
@@ -76,14 +76,14 @@ Launch `~/.claude/commands/agents/flow-orchestrator.md` subagent (model: opus) w
 - Hotfix flag (if set)
 
 Orchestrator returns:
-- N (number of generators)
-- Biases per generator
+- N (number of generators) — one wide generation at gen-1 (5–7 heavy/novel, 3 standard, 3 cheap-tier light); N=1–2 + graft for evidence-driven refinement
+- Biases per generator (default rotation: maintainability, simplicity, convention, security-when-scope-warrants)
 - **Model tier per generator** (per-bias tier table in `flow-dispatch-rules.md` §Per-bias model tier; fable only if the constitution opts in)
-- Per-variant token budget (from constitution — Rule 5)
-- Evaluator depth (will be used by `flow-cull`)
-- Chavruta decision (deferred to convergence checkpoint by default)
-- Spend estimate for the generation (written to `flow-state.yaml.spend`)
+- Evaluator depth (will be used by `flow-cull` — quick during rounds; deep is reserved for the single pre-ship pass)
+- Spend estimate for the generation, checked against the constitution's budgets at admission (Rule 5) and written to `flow-state.yaml.spend`
 - Rationale (logged to phase-log)
+
+Chavruta is not a dispatch decision here — it fires at `flow-cull`'s close (doctrine step 5).
 
 ### Step 4: Create generation directory
 
@@ -105,8 +105,8 @@ For each (bias, index) pair from the orchestrator's dispatch:
    - **The spec slice, not the bundle**: in-scope SCN-{NNN} + SR-{NNN} + glossary + the invariants this scope can violate. For gen-N>1, the context-curator digest of prior generations is the default read; raw artifacts on demand only.
    - Constraint bias
    - **Weight class + self-check tier** (light | standard | heavy — see `flow-generator.md` §Self-check tiers)
-   - **Per-variant token budget** (verbatim): "Stay within ~{X}k tokens for this run. If the protocol genuinely demands more, raise a `budget-pressure` flag in notes.md rather than silently expanding."
-   - Active dissents to address
+   - Active dissents to address, and any accepted ambiguities from the panel record (so decision ledgers can cite them)
+   - For refinement dispatches: which surviving variant(s) to **graft** from, and the evidence that triggered the redispatch
    - Variant directory path — **MUST be relative** (e.g. `efforts/{effort}/generations/gen-{N+1}/population/var-{index}/`). Never pass an absolute path into the main project tree — it will resolve there regardless of the agent's worktree cwd and is the primary mechanism behind the gen-3/var-3 + gen-5/var-2 isolation leaks.
    - **Explicit isolation contract** (copy verbatim into each generator's prompt):
      > Before any other action, run `TOPLEVEL=$(git rev-parse --show-toplevel)` and verify it starts with `*/.claude/worktrees/agent-`. If not, ABORT and return `isolation-violation` HITL flag. Re-verify before every git mutation (`git switch`, `git checkout`, `git branch`, `git add`, `git commit`). All your work happens inside this worktree. If a pre-commit hook fails because `node_modules` is missing, run `pnpm install` in the worktree — do NOT fall back to the main tree.
@@ -144,8 +144,8 @@ Write to `flow-state.yaml`:
 - `current-generation`: N+1
 - `wip-spread`: recalculated based on completed work
 - `dispatch.generators-per-gen-current`: actual N
-- `spend.last-generation.observed` + `precision` tag (Rule 5 actuals: `variant-count-x-tier-weight` as the floor; upgrade to `operator-cost` if the operator supplies real figures). Count refused/stranded/failed variants — they consumed tokens.
-- `phase-log`: gen-{N+1} spawn record + completion record (completion record includes observed spend and any `budget-pressure` flags raised)
+- `spend.last-generation.observed` + `precision` tag (Rule 5 actuals: `variant-count-x-tier-weight` as the floor; upgrade to `operator-cost` if the operator supplies real figures). Count refused/stranded/failed variants — they consumed tokens. Budgets are enforced at admission and reconciled here; there is no in-prompt cap (agents cannot see their own spend).
+- `phase-log`: gen-{N+1} spawn record + completion record (completion record includes observed spend)
 
 ### Step 9: Report
 
@@ -154,7 +154,7 @@ Return:
 - Variants produced (count + paths)
 - Biases used
 - HITL flags pending
-- Next-step suggestion: `/flow-cull` to score the generation
+- Next-step suggestion: `/flow-cull` to score the generation (chavruta + the ship decision follow at the cull's close)
 
 ## Hotfix mode
 
@@ -172,9 +172,10 @@ Used for critical security or production-down issues where the cost of the popul
 ## What this skill does NOT do
 
 - **It does not evaluate variants.** That's `/flow-cull`.
-- **It does not promote a variant to the working tree.** That's `/flow-converge` + `/flow-ship`.
+- **It does not promote a variant to the working tree.** That's `/flow-ship`.
 - **It does not modify the spec.** That's `/flow-spec`.
-- **It does not invoke chavruta.** That happens at convergence checkpoints, not per-generation.
+- **It does not run the interpretation panel.** That's `/flow-panel`, upstream — this skill only checks a panel record exists.
+- **It does not invoke chavruta.** That fires at `/flow-cull`'s close, not per-generation.
 
 ## Outputs
 
@@ -205,21 +206,21 @@ Each invocation produces a new generation (gen-{N+1}). Not idempotent in the sen
 
 ## Examples
 
-### Standard generation after spec amendment
+### The wide probe generation (gen-1)
 
 ```
 /flow-generate
 ```
 
-Orchestrator decides: gen-3 spawning 5 generators with biases [simplicity, performance, maintainability, security, convention]. Each writes to `var-1/` through `var-5/`. Returns after all complete.
+Panel record is clean. Orchestrator decides: gen-1 spawning 5 generators with biases [maintainability, simplicity, convention, security, maintainability-variant]. Each writes to `var-1/` through `var-5/`. Returns after all complete; decision ledgers and forks are the primary harvest.
 
-### Focused generation on specific SRs
+### Evidence-driven refinement
 
 ```
 /flow-generate SR-019,SR-020
 ```
 
-Same as above but generators only implement SR-019 and SR-020. Prior SRs' implementation is assumed already present in prior generation's survivors.
+A post-ship watch fired on SR-019's scope. Orchestrator dispatches N=2 grafting from the shipped variant; the evidence (which watch fired) is recorded in the dispatch log. Without named evidence this dispatch would halt.
 
 ### Hotfix path
 
@@ -231,4 +232,4 @@ N=1; security bias; HITL approval required; targets only SR-099 (a critical-path
 
 ## Operator output
 
-Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: the block reports variants delivered, budget pressure (any generator flagging that it needed more than its token budget), and the judgment calls the spec left open (decision-ledger entries) that need answers — each pending answer as its own decision item, never a stacked count.
+Every run closes with the operator block per `context/flow-operator-voice.md` — What happened / What it means / Decisions needed / Next step, at most 150 words, suite terms glossed on every use, no naked metrics. For this skill: the block reports variants delivered, what the generation cost against its admission budget, and the judgment calls the spec left open (decision-ledger entries) that need answers — each pending answer as its own decision item, never a stacked count.

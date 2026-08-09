@@ -55,25 +55,40 @@ project-root/
 ## State schema — `flow-state.yaml`
 
 ```yaml
-schema-version: "1.0"
+schema-version: "1.1"                   # 1.1 (2026-08): convergence + temperature blocks retired
 effort: customer-portal-rewrite        # kebab-case slug
 created: "2026-05-13"
 current-generation: 4
-status: in-flight                       # in-flight | converged | shipped | abandoned
+status: in-flight                       # in-flight | shipped | abandoned
+# (schema 1.0 carried convergence-score/-trend, generations-since-progress, a
+# temperature block, reheat-triggers-armed, and chavruta-on-convergence. Retired by the
+# operating doctrine — the convergence metric was the suite's most-misread instrument and
+# temperature sat at its floor throughout the field trial. MIGRATE ON WRITE: any skill
+# that mutates this file first upgrades it to the current schema — delete the retired
+# fields, rename chavruta-on-convergence to chavruta-at-cull-close, bump schema-version,
+# and log the migration in the phase-log. Tolerating retired fields on read is not
+# enough: an armed reheat trigger or a live temperature is an instruction to a future
+# reader, and stale state is how retired habits re-enter an effort. Ship readiness is
+# flow-ship's gate checklist, not a scalar.)
 
-# Convergence state
-convergence-score: 0.62                 # 0..1; threshold for ship is configurable, default 0.85
-convergence-trend: rising               # rising | flat | falling
-generations-since-progress: 0           # Reheat trigger fires at 3+
-
-# Temperature (exploration ↔ exploitation)
-temperature: 0.4                        # 0..1; 1.0=full explore, 0.0=full exploit
-temperature-floor: 0.1                  # Never go below this; preserves variance
-last-reheat: null                       # ISO datetime of last reheat event
-reheat-triggers-armed:
-  - eval-plateau-detected
-  - architectural-blocker
-  - debt-signal-spike
+# Checkpoint (written by flow-cull at every cull close — the forward-looking gate).
+# This is state a resuming session reads FIRST, not history it must interpret:
+# flow-pulse leads with it, flow-generate's evidence check reads `redispatch`, and
+# flow-eval's admission gate reads `evaluator-fleet`.
+checkpoint:
+  closed-at: "2026-05-13T09:00:00Z"     # last cull close; block absent before the first cull
+  generation: 4
+  redispatch: blocked                   # blocked | "evidence:{fired-watch|eval-blind-fork|spec-delta}:{ref}"
+  # Always reset to `blocked` at cull close — evidence must be re-named per dispatch,
+  # never carried over. flow-generate halts on `blocked` (doctrine step 7).
+  evaluator-fleet: open                 # open | "blocked: {structural blocker}"
+  # Set to blocked when the cull recorded a structural instrument ceiling (e.g. no
+  # runner, missing harness infrastructure). While blocked, the only admissible
+  # flow-eval work is removing the blocker — more authoring or a fleet re-run buys
+  # coverage statements against the same ceiling.
+  next:                                 # priority-ordered, mirrors the cull summary's Next section
+    - "/flow-chavruta — checkpoint review on the leading survivor(s)"
+    - "/flow-ship — ship decision on named qualitative grounds"
 
 # WIP pricing (market-maker spread)
 wip-spread: 0.12                        # admission cost for new work, 0..1
@@ -120,10 +135,10 @@ hitl-pending: 0                         # Count of items awaiting human input
 dispatch:
   orchestrator-policy: complexity-adaptive  # Always; do not change
   weight-class: standard                # light | standard | heavy — echo of constitution; constitution is authoritative
-  generators-per-gen-default: 5
-  generators-per-gen-current: 5         # Adjusted by orchestrator per request
-  evaluator-depth: standard             # quick | standard | deep | adversarial
-  chavruta-on-convergence: true         # invoke chavruta when converging
+  generators-per-gen-default: 3         # gen-1 wide probe (heavy: 5-7); refinement is 1-2 + graft, on evidence
+  generators-per-gen-current: 3         # Adjusted by orchestrator per request
+  evaluator-depth: quick                # quick | standard | deep | adversarial — quick during rounds; deep once at pre-ship
+  chavruta-at-cull-close: true          # invoke chavruta when the first cull closes (the checkpoint)
   chavruta-on-major-spec-change: true   # invoke chavruta when spec.md changes >20%
 
 # Spend (token accounting per generation — dispatch Rule 5)
@@ -141,7 +156,7 @@ updated-by: flow-orchestrator
 phase-log:                              # Append-only event log
   - "2026-05-13T09:00:00Z gen-3 culled, survivors: 2 of 5"
   - "2026-05-13T11:30:00Z chavruta-pair completed, 2 new dissents recorded"
-  - "2026-05-13T14:22:00Z gen-4 spawned, generators: 3, temperature: 0.4"
+  - "2026-05-13T14:22:00Z gen-2 spawned, generators: 2, graft: var-2, evidence: watch-fired:retry-p95"
 ```
 
 ---
@@ -210,7 +225,7 @@ metastable-assessment:                   # From flow-evaluator metastable detect
   raised-at: "2026-05-13T11:30:00Z"
   raised-by: "flow-chavruta-pair / stability-bias"
   generation: 4
-  context: "gen-4 convergence checkpoint"
+  context: "gen-4 cull close"
   position: |
     The simplicity-bias variant (var-2) eliminates the retry middleware
     in favor of inline retry logic. The stability-bias reviewer argues
@@ -276,8 +291,9 @@ weight-class: standard   # light | standard | heavy; set at flow-init, amendable
 ## Budgets
 token-budget-per-variant: 250000
 token-budget-per-generation: 1500000
-# REQUIRED fields (dispatch Rule 5). The per-variant budget is passed into every
-# generator's prompt as a working constraint, not just checked at admission.
+# REQUIRED fields (dispatch Rule 5). Enforced at admission with recorded actuals.
+# The per-variant figure is dispatch's estimating unit — it is NEVER written into a
+# generator's prompt (agents cannot see their own spend; in-prompt caps are theater).
 
 ## Prohibitions
 - No PII in logs.
@@ -295,7 +311,7 @@ token-budget-per-generation: 1500000
 - Dissent reactivated 3+ times across efforts → preference-articulator mode
 
 ## Dispatch overrides
-- Performance-critical paths → always invoke chavruta on convergence
+- Performance-critical paths → always invoke chavruta at the cull close
 - Accessibility-bearing components → minimum N=7 generators (heavy class only; at light/standard this guarantees an a11y-biased variant instead — see dispatch Rule 3)
 - Token-cost dimension always present in eval Pareto
 
@@ -312,14 +328,13 @@ token-budget-per-generation: 1500000
 |---------------|-------|--------|
 | `flow-init` | (none required) | `spec/spec.md`, `spec/constitution.md`, `evals/harness.yaml`, `flow-state.yaml` |
 | `flow-spec` | `spec/spec.md`, `spec/history/` | `spec/spec.md`, `spec/history/spec-v{N}.md` |
-| `flow-eval` | `evals/` | `evals/datasets/`, `evals/graders/`, `evals/harness.yaml` |
-| `flow-generate` | `spec/`, `flow-state.yaml`, prior `generations/` | `generations/gen-{N}/population/{var}/` |
+| `flow-panel` | `spec/spec.md` (in-scope slice) | `spec/.staging/panel-{date}.md` |
+| `flow-eval` | `evals/`, `flow-state.yaml` (checkpoint gate) | `evals/datasets/`, `evals/graders/`, `evals/harness.yaml`, `flow-state.yaml` (phase-log append; clear `checkpoint.evaluator-fleet` when the blocker is removed) |
+| `flow-generate` | `spec/`, `spec/.staging/panel-*.md`, `flow-state.yaml`, prior `generations/` | `generations/gen-{N}/population/{var}/` |
 | `flow-cull` | `generations/gen-{N}/population/`, `eval-result.yaml` files | `flow-state.yaml`, `generations/gen-{N}/summary.md` |
-| `flow-converge` | `flow-state.yaml`, `generations/gen-{N}/` | `flow-state.yaml` |
-| `flow-chavruta` | converging variants, `spec/`, prior `dissents-active.yaml` | `dissents-active.yaml` (append), `generations/gen-{N}/dissents/` |
+| `flow-chavruta` | surviving variants, `spec/`, prior `dissents-active.yaml` | `dissents-active.yaml` (append), `generations/gen-{N}/dissents/` |
 | `flow-dissent` | `dissents-active.yaml`, recent commits | `dissents-active.yaml` (status field updates) |
 | `flow-pulse` | `flow-state.yaml`, `dissents-active.yaml` | (read-only) |
-| `flow-anneal` | `flow-state.yaml`, eval-trend signals | `flow-state.yaml` (temperature, reheat fields) |
-| `flow-ship` | shipped variant, `spec/history/` | `shipped/`, optional Linear/GitHub mirror |
+| `flow-ship` | shipped variant, `spec/history/` | working tree (promotion), `shipped/` (ship record, watches), optional Linear/GitHub mirror |
 
 **Writes outside this map are violations.** Agents must not write to artifacts they are not authorized for.

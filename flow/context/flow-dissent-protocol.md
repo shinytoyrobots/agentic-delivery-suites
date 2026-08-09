@@ -73,7 +73,7 @@ Stored in `dissents-active.yaml` at the effort level.
   last-checked: "2026-05-13T14:22:00Z"
   reactivation-count: 0                # Number of times this dissent has been reactivated
   history:
-    - "2026-05-13T11:30:00Z raised by chavruta-pair gen-4 convergence checkpoint"
+    - "2026-05-13T11:30:00Z raised by chavruta-pair gen-4 cull close"
 ```
 
 ---
@@ -138,7 +138,7 @@ Two agents author dissents:
 
 ### Primary: `flow-chavruta-pair`
 
-The two reviewers (stability-bias + velocity-bias) generate dissents at convergence checkpoints, major spec changes, and metastable-candidate ship decisions.
+The two reviewers (stability-bias + velocity-bias) generate dissents at the cull close, the ship gate, major spec changes, and gated-ship decisions.
 
 A chavruta dissent is **always paired** — both positions are recorded, even if one is provisionally accepted. The chavruta exit condition is *documented disagreement with provisional resolution and explicit reactivation conditions*, NOT consensus.
 
