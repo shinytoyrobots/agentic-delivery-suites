@@ -1,6 +1,6 @@
 ---
 description: Author or evolve the executable spec — GWT scenarios (SCN) first, derived EARS requirements (SR) second. Converts NL intent to scenarios and requirements; versions spec.md; updates conformance mappings; triggers dissent reactivation check.
-argument-hint: <natural-language scenario or intent> | --requirement <non-functional EARS> | amend SCN-NNN/SR-NNN ... | --restructure | --constitution | --panel [scope SR-IDs]
+argument-hint: <natural-language scenario or intent> | --requirement <non-functional EARS> | amend SCN-NNN/SR-NNN ... | --restructure | --constitution
 model: opus
 allowed-tools:
   - Read
@@ -15,10 +15,10 @@ capability-class: planning-design
 tier: II
 domain: [flow]
 works-with:
-  requires-context: [flow-spec-protocol, flow-state-model, flow-philosophy, flow-dissent-protocol, flow-operator-voice, vault-access]
+  requires-context: [flow-spec-protocol, flow-state-model, flow-philosophy, flow-dissent-protocol, flow-operating-doctrine, flow-operator-voice, vault-access]
   upstream-skills: [flow-init]
-  downstream-skills: [flow-eval, flow-generate, flow-dissent]
-  compatible-agents: [flow-spec-writer, flow-dissent-monitor, flow-narrator]
+  downstream-skills: [flow-panel, flow-eval, flow-generate, flow-dissent]
+  compatible-agents: [flow-spec-writer, flow-dissent-monitor]
 readiness:
   state: green
   idempotent: false
@@ -37,12 +37,17 @@ Read context files:
 - `~/.claude/commands/context/flow-state-model.md`
 - `~/.claude/commands/context/flow-philosophy.md`
 - `~/.claude/commands/context/flow-dissent-protocol.md`
+- `~/.claude/commands/context/flow-operating-doctrine.md`
 - `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
 
 Author or evolve the executable spec. The spec is two layers: **GWT scenarios (`SCN-{NNN}`)** — product-facing behavioral examples, the primary unit of work — and **EARS requirements (`SR-{NNN}`)** — system-centric constraints, derived from scenarios or (for non-functional concerns) standalone. All spec evolution flows through this skill. `flow-generate` always reads the current `spec/spec.md`; this is the only legitimate way to change what it sees.
+
+**Standalone use is first-class**, not step one of the machine (doctrine §Three modes). Spec-only mode — `flow-spec` → `flow-panel` → conventional build, with tests bound to SRs — is a proven pattern: an executable spec plus a decision record, no generations, "the spec is the receipts."
+
+Every spec round that changes semantics ends with the interpretation panel (`/flow-panel`). Pure-ratification rounds — no semantic change — do not dispatch a generation and do not pay for a panel.
 
 ## Modes
 
@@ -89,15 +94,6 @@ Major version increment. HITL required. The scenario/SR is moved to `spec/histor
 ```
 
 Section reorganization, no semantic change. Major-with-restructure version (`X.Y.Z-rN`). HITL required.
-
-### Mode 5b: Interpretation panel
-
-```
-/flow-spec --panel SR-001,SR-007
-/flow-spec --panel            # full in-scope slice for the next generation
-```
-
-The pre-generation spec probe (`flow-dispatch-rules.md` §Interpretation panel). Spawns 3–5 cheap-tier parallel readers (model: sonnet, reads only); each independently commits to a per-SR interpretation, its two-reading decision points, and an interface-level sketch. Diff the readings; each divergence becomes a proposed spec amendment (routed through Mode 2 with HITL) or a recorded accepted-ambiguity. Writes `spec/.staging/panel-{date}.md` with the readings and the diff. No spec change happens without the normal amendment flow — the panel locates ambiguity; it does not resolve it.
 
 ### Mode 5: Constitution amendment
 
@@ -173,10 +169,8 @@ Order:
 
 ### Step 7: Trigger downstream
 
-Invoke (in parallel where appropriate):
-
 - `flow-dissent-monitor` — check for spec-change reactivation conditions
-- `flow-narrator` — project the spec delta into changelog/sales/support/marketing artifacts at `efforts/{effort}/shipped/comms/{spec-version}/`
+- If the change was semantic (minor or major): suggest `/flow-panel` as the closing step of the round — divergent readings are cheapest to catch now. Comms are NOT generated per spec version; the narrator runs at ship (`flow-ship`) or on explicit request.
 
 ### Step 8: Report
 
@@ -187,7 +181,7 @@ Return:
 - Traceability: which `SR-{NNN}` were derived from which `SCN-{NNN}`
 - Conformance mapping status (complete / pending)
 - Dissent reactivations triggered (count + IDs)
-- Comms artifacts generated (paths)
+- Panel suggestion (semantic change) or "pure ratification — no panel, no dispatch"
 
 ## Outputs
 
@@ -197,7 +191,6 @@ Return:
 | `spec/history/spec-v{N}-{date}.md` | Created | Yes |
 | `evals/harness.yaml` | Updated (mappings) | Yes |
 | `efforts/{effort}/flow-state.yaml` | Updated (phase-log) | No (gitignored) |
-| `efforts/{effort}/shipped/comms/{version}/` | Created (by narrator) | Yes |
 
 ## HITL surface
 
@@ -225,7 +218,7 @@ Re-running with identical input produces a no-op if the spec already reflects th
 /flow-spec "When a tenant exceeds their burst tolerance, the system should tell them how long to wait."
 ```
 
-Result: counter-prompt clarifies recovery behavior; `SCN-019` added (Given over-limit · When another request · Then 429 + retry hint), with acceptance criteria; derives `SR-019` (429 response), `SR-020` (Retry-After format), `SR-021` (rate-limit enforcement); spec bumped to v1.5.0 (minor); scenario tasks registered to `correctness-real-v1`; changelog v1.5.0 generated.
+Result: counter-prompt clarifies recovery behavior; `SCN-019` added (Given over-limit · When another request · Then 429 + retry hint), with acceptance criteria; derives `SR-019` (429 response), `SR-020` (Retry-After format), `SR-021` (rate-limit enforcement); spec bumped to v1.5.0 (minor); scenario tasks registered to `correctness-real-v1`; `/flow-panel` suggested to close the round.
 
 ### Add a non-functional requirement (no scenario)
 
@@ -241,12 +234,12 @@ Result: `SR-100` added (no SCN parent); spec bumped to v1.5.1 (minor); mapping a
 /flow-spec amend SCN-019 "add acceptance criterion: Retry-After must be ≤ 3600 seconds"
 ```
 
-Result: HITL prompt with before/after; on approval, `SCN-019` modified and derived `SR-020` adjusted; spec bumped to v2.0.0 (major); comms regenerated.
+Result: HITL prompt with before/after; on approval, `SCN-019` modified and derived `SR-020` adjusted; spec bumped to v2.0.0 (major); `/flow-panel` suggested to close the round.
 
 ### Constitution change
 
 ```
-/flow-spec --constitution "add escalation trigger: any spec change touching authentication invokes chavruta on convergence"
+/flow-spec --constitution "add escalation trigger: any spec change touching authentication invokes chavruta at the next cull close"
 ```
 
 Result: HITL prompt with full constitution diff; on approval, constitution amended; major spec version bumped.

@@ -15,9 +15,9 @@ capability-class: planning-design
 tier: I
 domain: [flow]
 works-with:
-  requires-context: [flow-philosophy, flow-state-model, flow-spec-protocol, flow-eval-protocol, flow-dispatch-rules, flow-dissent-protocol, flow-operator-voice, vault-access]
+  requires-context: [flow-philosophy, flow-state-model, flow-spec-protocol, flow-eval-protocol, flow-dispatch-rules, flow-dissent-protocol, flow-operating-doctrine, flow-operator-voice, vault-access]
   upstream-skills: []
-  downstream-skills: [flow-spec, flow-eval, flow-generate]
+  downstream-skills: [flow-spec, flow-eval, flow-panel, flow-generate]
   compatible-agents: [flow-orchestrator, flow-spec-writer, flow-evaluator, flow-context-curator]
 readiness:
   state: green
@@ -39,12 +39,17 @@ Read context files:
 - `~/.claude/commands/context/flow-eval-protocol.md`
 - `~/.claude/commands/context/flow-dispatch-rules.md`
 - `~/.claude/commands/context/flow-dissent-protocol.md`
+- `~/.claude/commands/context/flow-operating-doctrine.md`
 - `~/.claude/commands/context/flow-operator-voice.md`
 - `~/.claude/commands/context/vault-access.md`
 
 ## Purpose
 
-Bootstrap a `flow` effort. Produce the foundational artifacts that every downstream skill assumes:
+Bootstrap a `flow` effort — **lean, with two non-negotiables** (doctrine step 1): dedicated invariant graders authored BEFORE the first cull, and at least one cross-boundary objective grading the artifact against its real consumers. Everything else can start skeletal.
+
+**Mode gate first** (doctrine step 0): full flow is for novel, ambiguous, security-bearing, or hard-to-revert scope. If the scope is well-understood, propose spec-only mode (`flow-spec` → `flow-panel` → conventional build) or spec + eval mode instead of initializing the full machine — and say so before asking a single setup question.
+
+Produce the foundational artifacts that every downstream skill assumes:
 
 - `spec/spec.md` — initial executable spec (may be skeletal)
 - `spec/constitution.md` — governance rules for this effort
@@ -79,7 +84,7 @@ Use `AskUserQuestion` to collect:
 3. **HITL mode**: preference-articulator | comprehension-auditor | reactivation-watch | autonomous (default: preference-articulator)
 4. **Sponsor/customer context**: any named accounts or escalations driving this? (used by `flow-narrator`)
 5. **Hard prohibitions**: things implementations must NOT do, regardless of requirements (input to constitution.md)
-6. **Default temperature**: starting exploration level (default 0.5)
+6. **Real consumers of the artifact**: who or what consumes this artifact across repo/service boundaries? (seeds the cross-boundary objective — the seam is where the field trial's one commercially costly defect lived)
 7. **Weight class** (light | standard | heavy) — propose one from these signals, then HITL-confirm:
    - In-scope SR count for gen-1 (the walking-skeleton scope, not the whole spec)
    - Security- or incident-bearing scope? → **auto-propose heavy** (never propose lighter for security-bearing work)
@@ -139,7 +144,14 @@ token-budget-per-generation: {≈ per-variant × planned N: light ~500k | standa
 
 ### Step 5: Author eval suite
 
-Launch `~/.claude/commands/agents/flow-evaluator.md` subagent (model: opus, read-only mode) and `~/.claude/commands/agents/flow-spec-writer.md` subagent together. Produce:
+Launch `~/.claude/commands/agents/flow-evaluator.md` subagent (model: opus, read-only mode) and `~/.claude/commands/agents/flow-spec-writer.md` subagent together.
+
+Two outputs are **non-negotiable** (doctrine step 1) — a first cull may not run without them:
+
+- **Dedicated invariant graders** (`evals/graders/invariants.md` + INV-* entries in harness): the hard-cull constraints, authored now, not discovered later.
+- **At least one cross-boundary objective**: a dimension or mapping that grades the artifact against its real consumers (the answers from Step 2 item 6) — a contract test, a downstream-consumer fixture, a seam probe. In-repo scores cannot see seam defects.
+
+Produce:
 
 1. `evals/harness.yaml` with default 6 dimensions wired:
 
@@ -171,6 +183,12 @@ dimensions:
     graders: [cost]
     datasets: []
     threshold: 0.50
+  - name: cross-boundary          # NON-NEGOTIABLE (doctrine step 1): grades the artifact
+    graders: [cross-boundary]     # against its real consumers — contract tests, consumer
+    datasets: [cross-boundary-real-v1]  # fixtures, seam probes. Fill from Step 2 item 6.
+    threshold: 1.0
+invariants: []                    # INV-* hard-cull constraints — MUST be populated with
+                                  # dedicated graders before the first cull (doctrine step 1)
 weights:
   correctness: 0.35
   performance: 0.15
@@ -210,22 +228,11 @@ This step is skipped if the project is greenfield (no existing code yet).
 Write `efforts/{effort-slug}/flow-state.yaml` with the schema in `context/flow-state-model.md`:
 
 ```yaml
-schema-version: "1.0"
+schema-version: "1.1"
 effort: {effort-slug}
 created: "{today}"
 current-generation: 0
 status: in-flight
-convergence-score: 0.0
-convergence-trend: flat
-generations-since-progress: 0
-temperature: {user-supplied default, or 0.5}
-temperature-floor: 0.1
-last-reheat: null
-reheat-triggers-armed:
-  - eval-plateau-detected
-  - architectural-blocker
-  - debt-signal-spike
-  - dissent-reactivation-cluster
 wip-spread: 0.0
 wip-in-flight:
   generators: 0
@@ -242,10 +249,10 @@ hitl-pending: 0
 dispatch:
   orchestrator-policy: complexity-adaptive
   weight-class: {from constitution}        # light | standard | heavy
-  generators-per-gen-default: {class default: light 3 | standard 5 | heavy 7}
+  generators-per-gen-default: {class default: light 3 | standard 3 | heavy 5-7}
   generators-per-gen-current: {same as default}
-  evaluator-depth: {class default: light quick | standard standard | heavy standard}
-  chavruta-on-convergence: {class default: light false | standard/heavy true}
+  evaluator-depth: {class default: quick — deep is reserved for the single pre-ship pass}
+  chavruta-at-cull-close: true             # doctrine step 5; the checkpoint is the cull close
   chavruta-on-major-spec-change: true
 spend:
   last-generation:
@@ -263,8 +270,8 @@ phase-log:
 Read everything back and verify:
 - `spec/spec.md` has at least one SR-{NNN}
 - `spec/constitution.md` exists with non-empty prohibitions
-- `spec/constitution.md` has a `weight-class` and BOTH budget fields (`token-budget-per-variant`, `token-budget-per-generation`) — these are required, not optional
-- `evals/harness.yaml` validates
+- `spec/constitution.md` has a `weight-class` and BOTH budget fields (`token-budget-per-variant`, `token-budget-per-generation`) — these are required, not optional; budgets are enforced at admission with recorded actuals (there is no in-prompt cap)
+- `evals/harness.yaml` validates AND satisfies the two non-negotiables: `invariants` populated with dedicated graders, and a cross-boundary objective present with its consumers named
 - `flow-state.yaml` validates (including `dispatch.weight-class` matching the constitution)
 - `.gitignore` excludes working artifacts
 
@@ -275,13 +282,13 @@ Launch `~/.claude/commands/agents/flow-dissent-monitor.md` subagent (model: sonn
 ### Step 10: Report
 
 Return summary:
-- Effort slug
+- Effort slug + mode (spec-only | spec+eval | full flow) and why
 - Weight class + one-line rationale + the budgets it set
 - Files created (with paths)
 - SRs in spec (count + IDs)
-- Eval dimensions configured
+- Eval dimensions configured, invariant graders authored, cross-boundary objective + its consumers
 - HITL mode
-- Next-step suggestion: `/flow-eval` to populate datasets, or `/flow-generate` to start gen-1
+- Next-step suggestion: `/flow-eval` to populate datasets, then `/flow-panel` before any generation
 
 ## Outputs
 

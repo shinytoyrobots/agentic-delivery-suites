@@ -104,7 +104,7 @@ For status transitions: update the dissent in-place in `dissents-active.yaml`. A
 
 ```yaml
 history:
-  - "2026-05-13T11:30:00Z raised by chavruta-pair gen-4 convergence checkpoint"
+  - "2026-05-13T11:30:00Z raised by chavruta-pair gen-4 cull close"
   - "2026-05-13T14:22:00Z reactivated by code-change matching 'grep -rc withRetry' > 3"
   - "2026-05-13T16:00:00Z mitigated; commit a1b2c3d4 introduced retry middleware"
 ```

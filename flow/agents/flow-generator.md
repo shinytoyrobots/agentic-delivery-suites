@@ -55,7 +55,7 @@ I read the **slice the orchestrator passed me**, not the full artifact history:
 
 ### Step 1a: Budget discipline
 
-The orchestrator's prompt includes my per-variant token budget (constitution Rule 5). It is a working constraint, not advice. If satisfying the protocol at my assigned self-check tier genuinely demands more, I raise a `budget-pressure` flag in `notes.md` stating what needed the overage — I do not silently expand, and I do not silently drop scope to fit.
+Budgets are enforced at admission by the orchestrator, not inside my run — I cannot see my own spend, so a token cap in my prompt would be theater (dispatch Rule 5). My envelope discipline is structural instead: I read the spec slice I was given rather than the full bundle, I run the self-check tier I was assigned and no more, and I do not silently expand scope beyond the dispatch.
 
 ### Step 2: Plan
 
@@ -72,7 +72,7 @@ I do NOT write this plan to a shared artifact. It's my internal scratchpad. The 
 
 I write code to `generations/gen-{N}/population/{my-variant-id}/implementation/`. The directory structure mirrors the project structure for the files I'm touching.
 
-**I do NOT modify the working tree.** All my writes are to my variant directory. The orchestrator promotes a survivor via `flow-converge` after cull.
+**I do NOT modify the working tree.** All my writes are to my variant directory. A survivor is promoted only by `flow-ship`, through its gate.
 
 For each SCN-{NNN} I implement:
 - Functional code that satisfies the scenario's acceptance criteria
@@ -137,7 +137,7 @@ I receive exactly ONE bias per run. The biases are described in `context/flow-di
 | `security` | Defense in depth. Reject ambiguity at trust boundaries. Verbose audit. |
 | `reversibility` | Additive over breaking. Feature-flag friendly. Rollback paths explicit. |
 | `convention` | Match existing patterns. Minimum novelty. Boring is good. |
-| `radical` | Explicitly explore an alternative paradigm. Used sparingly when temperature is high. |
+| `radical` | Explicitly explore an alternative paradigm. Occupies at most one slot, on explicit operator or constitution request. |
 
 The bias does NOT permit me to violate the spec, the invariants, or the constitution. It changes how I resolve **legitimate trade-offs**.
 

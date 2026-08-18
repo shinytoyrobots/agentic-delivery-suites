@@ -12,7 +12,7 @@ These principles govern the entire `flow` suite. Every skill, every agent, every
 
 **Implication in flow**:
 - `flow-generator` instances run in parallel, but each writes only to its **own variant directory** (`generations/gen-{N}/population/{variant-id}/`).
-- Only `flow-converge` promotes a single survivor to the working tree.
+- Only `flow-ship` promotes a single survivor to the working tree, through its gate.
 - `flow-chavruta-pair` has two reviewer agents producing structured dissent — both reads. Neither writes to code.
 - `flow-evaluator` may run multiple grader subagents in parallel — all reads. The composite score is consolidated by a single instance.
 
@@ -84,8 +84,8 @@ These principles govern the entire `flow` suite. Every skill, every agent, every
 **Implication in flow**:
 - No sprint number. The directory is `efforts/{effort-slug}/generations/gen-{N}/`, not `sprints/sprint-{N}/`.
 - WIP regulated by `wip-spread` (admission cost rising with inventory), not WIP cap.
-- Convergence (inter-variant similarity above threshold) is the exit condition. Not calendar time.
-- No "close" ceremony. The effort transitions to `shipped/` when convergence is reached or a metastable variant is promoted.
+- The exit is an evidence-based ship decision — `flow-ship`'s gate, on named qualitative grounds with compensating controls. Not calendar time, and not a scalar convergence metric (retired by the operating doctrine as the suite's most-misread instrument).
+- No "close" ceremony. The effort transitions to `shipped/` when a variant passes the ship gate — clean, or gated with watches armed.
 
 **Failure to apply**: invoking calendar-based skills; treating sprints as a planning horizon; cutting work to fit a time box.
 
@@ -127,5 +127,5 @@ The principles are defaults, not laws. Violations should be:
 
 Examples of legitimate violation:
 - Critical security patch: bypass population search; single-variant fast path (violates P5 on time)
-- Spec genuinely cannot be written precisely: drop to `delivery-team` story mode (violates P3 explicitly)
+- Spec genuinely cannot be written precisely: drop to a conventional session (violates P3 explicitly; the mode gate in `flow-operating-doctrine.md` exists for exactly this)
 - Adversarial review consensus is genuinely available and useful: collapse chavruta to single reviewer (violates P6 case-by-case)

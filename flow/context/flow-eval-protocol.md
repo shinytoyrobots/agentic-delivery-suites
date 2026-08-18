@@ -48,8 +48,11 @@ The runner. `evals/harness.yaml` specifies:
 | `accessibility` | WCAG 2.2 AA conformance for any UI surface | Deterministic (axe-core + playwright) |
 | `security` | High-severity findings; auth surfaces; secrets | Deterministic (security scanner + LLM-judge for design) |
 | `cost` | Tokens to generate + tokens to evaluate, against budget | Deterministic (token counter) |
+| `cross-boundary` | The artifact against its **real consumers** — contract tests, downstream fixtures, seam probes | Deterministic (contract/consumer tests) |
 
 Constitution may add or remove dimensions. Removing `accessibility` or `security` requires explicit override in `constitution.md` with rationale.
+
+Two suite properties are **non-negotiable** before the first cull (doctrine step 1): dedicated **invariant graders** (the INV-* hard-cull constraints, authored up front) and at least one **cross-boundary objective**. The field trial's one commercially costly defect lived at an ungraded cross-repo seam — in-repo scores cannot see it.
 
 ---
 
@@ -64,6 +67,14 @@ Variant A **dominates** variant B if:
 - A scores > B on at least one dimension
 
 A variant on the **Pareto front** of a generation is one that is not dominated by any other variant in that generation.
+
+### Noise floor (applied before domination)
+
+Graders are instruments with variance, and the field trial showed tournaments over saturated suites ranking on that variance (0.0002–0.01 deltas the culls' own text disowned). Before computing domination:
+
+- A per-dimension delta within the grader's **characterized variance** (recorded in the grader spec via `flow-eval --characterize`) is a **tie**. Absent characterization, deltas ≤ 0.01 are ties — the global floor, good enough to start.
+- A **saturated dimension** — every remaining variant at or within the floor of the ceiling or its threshold — **does not rank**. It is excluded from domination comparisons and named as saturated in the cull summary.
+- Domination requires differences that clear the floor on non-saturated dimensions.
 
 ### What survives the cull
 
@@ -104,9 +115,9 @@ Additional mitigations:
 
 ---
 
-## Metastable detection
+## Metastable detection (gated-ship qualification)
 
-A variant is a **metastable candidate** if it scores high on stability and is locally optimal, even if it does not yet hit full convergence on spec proximity.
+A variant is a **metastable candidate** if it scores high on stability and is locally optimal, even though it does not cover the full spec. Under the operating doctrine, ship kinds are **clean** or **gated** — "metastable" survives as the evaluator's assessment that qualifies a variant for a *gated* ship (partial coverage behind flags, deferred SRs disclosed, watches armed).
 
 Stability components (each 0..1; equal-weighted by default):
 
@@ -122,7 +133,7 @@ Spec proximity = fraction of spec elements mapped to a passing grader for this v
 - Spec proximity ≥ 0.60 AND
 - Variant is on the Pareto front for at least 2 dimensions
 
-Metastable candidates are surfaced in `flow-state.yaml`. `flow-ship` may release a metastable candidate as a feature-flagged early access without waiting for full convergence.
+Metastable candidates are surfaced in `flow-state.yaml`. `flow-ship --gated` may release one as feature-flagged early access, through the full ship gate.
 
 ---
 
@@ -155,16 +166,16 @@ A replacement always increments the eval suite's version. `flow-spec-writer` req
 
 ## Running evals
 
-Three depths configurable in `flow-state.yaml.dispatch.evaluator-depth`:
+Four depths configurable in `flow-state.yaml.dispatch.evaluator-depth`, **tiered like the dispatch table tiers generators** (doctrine step 8 — the trial measured evaluation at 1.4–1.6× generation cost at deep depth, making the eval suite the cost center):
 
 | Depth | What runs | When |
 |-------|-----------|------|
-| `quick` | Deterministic graders on real datasets only. ~minutes. | Single-variant prototyping; debug iterations |
-| `standard` | All graders (deterministic + LLM-judge) on real + adversarial datasets. ~10s of minutes. | Default per-variant per-generation |
-| `deep` | Standard + extended LLM-judge passes + reproducibility re-runs (5x sampling on stochastic graders) | Pre-ship; post-major spec change |
-| `adversarial` | Deep + active adversarial generation (synthesize new attack cases). ~hours. | On dissent reactivation; on Goodhart signal |
+| `quick` | Deterministic graders on real datasets only. ~minutes. | **During rounds — the per-cull default at every class** |
+| `standard` | All graders (deterministic + LLM-judge) on real + adversarial datasets. ~10s of minutes. | Re-culls after suite refinement; operator request |
+| `deep` | Standard + extended LLM-judge passes + reproducibility re-runs (5x sampling on stochastic graders) | **Exactly once, at pre-ship** — owned by `flow-ship`'s gate |
+| `adversarial` | Deep + active adversarial generation (synthesize new attack cases). ~hours. | **Gating dimensions only** (invariants, security, cross-boundary); on dissent reactivation; on Goodhart signal |
 
-The orchestrator picks depth. Generators do not invoke evals directly.
+The orchestrator picks depth. Generators do not invoke evals directly. Before an LLM-judge grader runs across a population, **measure one judge against one variant** and project fleet cost from the recorded unit rate. Spare eval tokens go to the verifier — holdouts, variance characterization, seam objectives — before population width.
 
 ---
 
@@ -180,4 +191,4 @@ The orchestrator picks depth. Generators do not invoke evals directly.
 | Failure = block merge | Failure on one dimension = lower Pareto rank; failure on invariant = cull |
 | QA agent has veto authority | Evaluator has scoring authority; orchestrator + chavruta decide ship |
 
-The `flow` evaluator is **non-vetoing**. It scores. Decisions are made by `flow-converge` (advance/ship) and `flow-chavruta` (preserved dissent on the decision).
+The `flow` evaluator is **non-vetoing**. It scores. Decisions are made at `flow-cull`'s close (checkpoint) and `flow-ship`'s gate (named qualitative grounds + compensating controls), with `flow-chavruta` preserving dissent on the decision. No scalar ships a variant.
