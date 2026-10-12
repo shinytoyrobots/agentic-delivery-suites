@@ -136,6 +136,16 @@ See `context/flow-state-model.md` for the full schema.
 | `context/flow-dissent-protocol.md` | Dissent object schema, reactivation conditions, monitor behavior |
 | `context/flow-operator-voice.md` | Operator register: plain-English closing block, per-use jargon glossing |
 
+## Known risk: the spec ↔ panel loop (addendum)
+
+The loop `flow-spec` → `flow-panel` → `flow-spec amend` → `flow-panel` has no stopping rule in this version. The only exit is a `panel-clean` verdict, and the panel re-samples its readers on every run, so re-running on an unchanged spec can surface different forks. A clean verdict may never arrive.
+
+Each divergence is either amended or recorded as an accepted ambiguity (the fork is genuinely free), but nothing steers you toward accepting. An amendment is a major version bump that needs your approval, and each amendment suggests another panel. In practice this means several rounds, more tokens than expected, and less confidence that the spec is ever finished.
+
+Until this is fixed, bound it yourself: treat two panel rounds as the cap; re-panel only the requirements an amendment touched (`/flow-panel SR-…`); amend only forks where the readings would produce visibly different behavior and accept the rest; and batch all approved amendments into one `/flow-spec amend` round. Clearing context between `/flow-spec` and `/flow-panel` is normal, so note the round number in your own notes.
+
+This is documentation only. The commands are unchanged here.
+
 ## Design principles
 
 1. **Intelligence parallel, writes serial.** Many agents may analyze; only one commits.
