@@ -140,7 +140,7 @@ See `context/flow-state-model.md` for the full schema.
 
 The loop `flow-spec` → `flow-panel` → `flow-spec amend` → `flow-panel` has no stopping rule in this version. The only exit is a `panel-clean` verdict, and the panel re-samples its readers on every run, so re-running on an unchanged spec can surface different forks. A clean verdict may never arrive.
 
-Each divergence also routes to an amendment, which is a major version bump that needs your approval, and each amendment suggests another panel. In practice this means several rounds, more tokens than expected, and less confidence that the spec is ever finished.
+Each divergence is either amended or recorded as an accepted ambiguity (the fork is genuinely free), but nothing steers you toward accepting. An amendment is a major version bump that needs your approval, and each amendment suggests another panel. In practice this means several rounds, more tokens than expected, and less confidence that the spec is ever finished.
 
 Until this is fixed, bound it yourself: treat two panel rounds as the cap; re-panel only the requirements an amendment touched (`/flow-panel SR-…`); amend only forks where the readings would produce visibly different behavior and accept the rest; and batch all approved amendments into one `/flow-spec amend` round. Clearing context between `/flow-spec` and `/flow-panel` is normal, so note the round number in your own notes.
 

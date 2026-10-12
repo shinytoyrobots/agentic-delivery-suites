@@ -257,7 +257,7 @@ Two limits worth naming up front. Fourteen days is too short to measure long-ter
 
 ## Known risk: the spec ↔ panel loop (addendum)
 
-The `/flow-spec` → `/flow-panel` → `/flow-spec amend` → `/flow-panel` cycle can feel endless. Nothing in this version stops it: the only exit is a `panel-clean` verdict, and because the panel re-samples its readers each run, a clean verdict may never come. Every divergence also leads to an amendment (a major version bump with your approval), which suggests another panel. The cost shows up as extra rounds, extra tokens, and doubt about whether the spec is ever done.
+The `/flow-spec` → `/flow-panel` → `/flow-spec amend` → `/flow-panel` cycle can feel endless. Nothing in this version stops it: the only exit is a `panel-clean` verdict, and because the panel re-samples its readers each run, a clean verdict may never come. Every divergence is either amended or recorded as an accepted ambiguity (the fork is genuinely free), but nothing steers you toward accepting. An amendment is a major version bump with your approval, and it suggests another panel. The cost shows up as extra rounds, extra tokens, and doubt about whether the spec is ever done.
 
 What to do in the meantime:
 
