@@ -255,6 +255,20 @@ The 2026-07-28 → 2026-08-10 field trial already ran this test at scale (7 effo
 
 Two limits worth naming up front. Fourteen days is too short to measure long-term comprehension debt. The dissent registry's value is cumulative — it won't show up until effort five or six. Plan a re-measurement at 90 days and across multiple efforts before drawing firm conclusions.
 
+## Known risk: the spec ↔ panel loop (addendum)
+
+The `/flow-spec` → `/flow-panel` → `/flow-spec amend` → `/flow-panel` cycle can feel endless. Nothing in this version stops it: the only exit is a `panel-clean` verdict, and because the panel re-samples its readers each run, a clean verdict may never come. Every divergence also leads to an amendment (a major version bump with your approval), which suggests another panel. The cost shows up as extra rounds, extra tokens, and doubt about whether the spec is ever done.
+
+What to do in the meantime:
+
+- **Cap it at two panel rounds.** After round 2, accept or amend whatever is left, and move on.
+- **Amend only forks that matter.** If two readers would build visibly different behavior (a different test would pass), amend. If they differ only in internal structure, accept the ambiguity; generators log those choices in their decision ledgers.
+- **Re-panel narrowly.** Run `/flow-panel SR-007,SR-012` on the requirements the amendment touched instead of the full slice.
+- **Batch amendments.** Gather every approved fork into one `/flow-spec amend` round to avoid repeated version bumps.
+- **Track the round yourself.** Context is usually cleared between `/flow-spec` and `/flow-panel`, and this version doesn't record a round count.
+
+This note is documentation only. No command behavior changes here.
+
 ## Related reading
 
 - `README.md` — concise suite manifest (skills, agents, state model)
